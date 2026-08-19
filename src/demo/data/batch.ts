@@ -14,7 +14,7 @@ export const referenceBatch: Batch = {
   id: "FR-2048",
   commodity: "Tomato",
   originFacilityId: "origin-tamil-nadu-hub",
-  plannedMarketId: "market-planned-chennai-wholesale",
+  plannedMarketId: "market-chennai-tomato-wholesale",
   currentLocationLabel: "Tamil Nadu hub",
   quantityKg: 2000,
   saleableQuantityKg: 2000,
@@ -23,7 +23,7 @@ export const referenceBatch: Batch = {
   etaIso: "2026-01-15T19:00:00+05:30",
   transitDelayHours: 0,
   currentPlanAction: "SELL",
-  status: "DECISION_REQUIRED",
+  status: "NORMAL",
   telemetry: referenceTelemetry,
   dataProvenance: "SYNTHETIC",
 };

@@ -9,6 +9,7 @@
 import { evaluateDecision } from "../src/domain/engine/evaluateDecision";
 import type { DecisionResult } from "../src/domain/types/decision";
 import type { Scenario } from "../src/domain/types/models";
+import { referenceBatch } from "../src/demo/data/batch";
 import { buildDecisionContext } from "../src/demo/scenarios/buildContext";
 import {
   CURATED_SCENARIOS,
@@ -68,7 +69,7 @@ console.log("################################################################");
 let allPassed = true;
 
 for (const scenario of CURATED_SCENARIOS) {
-  const context = buildDecisionContext(scenario);
+  const context = buildDecisionContext(referenceBatch, scenario);
   const result = evaluateDecision(context);
   printResult(scenario, result);
 
@@ -86,7 +87,7 @@ for (const scenario of CURATED_SCENARIOS) {
   if (!clean) allPassed = false;
 
   // Determinism: run twice, compare.
-  const result2 = evaluateDecision(buildDecisionContext(scenario));
+  const result2 = evaluateDecision(buildDecisionContext(referenceBatch, scenario));
   const deterministic = JSON.stringify(result) === JSON.stringify(result2);
   assert(deterministic, `${scenario.name} → deterministic (same input -> same output)`);
   if (!deterministic) allPassed = false;
@@ -96,7 +97,7 @@ console.log("\n################################################################"
 console.log("# Extreme case — no feasible pathway");
 console.log("################################################################");
 
-const extremeContext = buildDecisionContext(SCENARIO_EXTREME_NO_FEASIBLE_PATHWAY);
+const extremeContext = buildDecisionContext(referenceBatch, SCENARIO_EXTREME_NO_FEASIBLE_PATHWAY);
 const extremeResult = evaluateDecision(extremeContext);
 printResult(SCENARIO_EXTREME_NO_FEASIBLE_PATHWAY, extremeResult);
 
@@ -112,7 +113,7 @@ const extremeClean = !hasNaNOrUndefined(extremeResult);
 assert(extremeClean, "extreme case → no NaN / undefined in result");
 if (!extremeClean) allPassed = false;
 
-const extremeResult2 = evaluateDecision(buildDecisionContext(SCENARIO_EXTREME_NO_FEASIBLE_PATHWAY));
+const extremeResult2 = evaluateDecision(buildDecisionContext(referenceBatch, SCENARIO_EXTREME_NO_FEASIBLE_PATHWAY));
 const extremeDeterministic = JSON.stringify(extremeResult) === JSON.stringify(extremeResult2);
 assert(extremeDeterministic, "extreme case → deterministic");
 if (!extremeDeterministic) allPassed = false;
