@@ -3,6 +3,7 @@ import type { Batch, BatchStatus, DecisionResult } from "../../domain/types";
 import { batches } from "../data/batches";
 import { markets, MARKET_BASE_PRICE_PER_KG } from "../data/markets";
 import { buildDecisionContext, deriveCurrentStateScenario } from "./buildContext";
+import { computeDisplayStatus } from "./displayStatus";
 
 export interface BatchDashboardEntry {
   batch: Batch;
@@ -13,13 +14,6 @@ export interface BatchDashboardEntry {
   grossPlannedValue: number;
   /** Section 9 — the batch's visual state, computed fresh from the engine's own output. */
   displayStatus: BatchStatus;
-}
-
-function computeDisplayStatus(batch: Batch, decision: DecisionResult): BatchStatus {
-  if (decision.marginStatus === "NO_FEASIBLE_PATHWAY") return "AT_RISK";
-  if (decision.assumptionFlags.length > 0) return "ASSUMPTION_FLAGGED";
-  if (decision.recommendedAction !== batch.currentPlanAction) return "DECISION_REQUIRED";
-  return "NORMAL";
 }
 
 /** Section 9 — runs every active batch through the engine using its own current state (no scenario override). */
