@@ -1,36 +1,119 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# FreshRoute
 
-## Getting Started
+**AI-Powered Perishable Value Recovery Engine**
+Value Recovery Decision Layer · Build with Bharat 2.0
 
-First, run the development server:
+FreshRoute evaluates the recovery pathways available to a perishable batch — sell,
+discount, divert, reroute, store, process — and recommends the one expected to
+preserve the most value, given the batch's current condition, market signals,
+logistics, and cost. It is not a spoilage predictor, a route optimiser, or a price
+dashboard on its own; it is the layer that turns those signals into one ranked,
+economically-priced decision.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+**Live product:** https://d-freshroute.vercel.app
+**Deck / research context:** available on request
+
+---
+
+## Why this exists
+
+Post-harvest loss in India is largest not because produce spoils unpredictably, but
+because the plan committed at dispatch never gets re-evaluated once conditions
+change in transit. FreshRoute is built to answer one question, continuously, for a
+single batch:
+
+> Given this batch's current condition and today's market, which recovery pathway
+> preserves the most value?
+
+## Evidence tiers
+
+Not all six pathways carry the same weight of evidence from our Phase 0 research:
+
+| Tier | Pathways |
+|---|---|
+| **Verified core** | Sell, Discount, Divert |
+| **Plausible — unverified** | Reroute, Store, Process |
+
+Plausible-unverified pathways still compete honestly in the engine's ranking, but
+they are visibly flagged in the UI and are never presented as field-validated. This
+distinction is a first-class part of the product, not a footnote.
+
+## Architecture
+
+The decision engine is deterministic, pure TypeScript, and fully isolated from the
+UI layer:
+
+```
+src/
+  app/            Next.js routes (dashboard, batches, decisions)
+  components/     shell / batch / decision / market / shared
+  domain/
+    engine/       six pathway evaluators + evaluateDecision() orchestrator
+    types/        shared types (EvidenceTier, DecisionResult, RankedAction, ...)
+  demo/
+    data/         synthetic batch, market, and facility datasets
+    scenarios/     curated scenario presets, decision-context builders
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The engine computes:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+expectedRecovery = saleableKg × realizablePrice
+                    − transport − handling − storage − processing − riskAdjustment
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+for every feasible pathway, ranks them, and applies a narrow-margin policy before
+returning a recommendation. Remaining useful life is path-aware — computed per
+candidate through hold → transit → market dwell, not reused as a single static
+batch value. No pathway is ever hard-coded to win; every recommendation traces
+back to a real evaluation over the current scenario state.
 
-## Learn More
+## What's real vs. simulated
 
-To learn more about Next.js, take a look at the following resources:
+The product experience — UI, state management, interaction, and the decision
+logic itself — is real and fully functional. What's simulated is the data it runs
+on: telemetry, market prices, and facility/route state are synthetic and
+indicative, since live integrations (AGMARKNET, IoT telemetry, field-verified
+facility data) are out of scope for this stage and follow field validation.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+This is disclosed in-product via a persistent `DEMO MODE` indicator and
+`SIMULATION-LIMITED` confidence labeling — never presented as a calibrated,
+production-trained result.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Tech stack
 
-## Deploy on Vercel
+Next.js · TypeScript · Tailwind CSS · shadcn/ui · Framer Motion · Recharts (where
+a chart genuinely helps).
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+No backend, no database, no auth, no external API keys, no LLM in the decision
+path — the arithmetic is deterministic and auditable. (An LLM may explain a
+decision in natural language; it never computes one.)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Running locally
+
+```bash
+npm install
+npm run dev
+```
+
+Open http://localhost:3000, click **Enter Operations**, open any batch, and use
+the scenario workspace to change thermal exposure, transit delay, market
+strength, or condition — the ranking and recommendation recompute live.
+
+```bash
+npm run build   # production build
+npm run lint    # lint check
+```
+
+## Known limitations
+
+- Data is synthetic; economics are indicative, not measured.
+- Confidence is simulation-limited, not calibrated against real outcomes.
+- Reroute/Store/Process feasibility depends on assumptions (execution rights,
+  facility/channel verification) not yet field-tested.
+- Supporting pages (Markets, Facilities, Activity) are lighter-weight context
+  views; the core reviewer flow is Dashboard → Batch → Decision.
+
+---
+
+Built for Build with Bharat 2.0, National Institute of Technology, Delhi.
