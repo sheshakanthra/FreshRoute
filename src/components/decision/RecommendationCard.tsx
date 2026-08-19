@@ -1,9 +1,14 @@
+"use client";
+
+import { AnimatePresence, motion } from "framer-motion";
+
 import { AssumptionFlag } from "@/components/shared/AssumptionFlag";
 import { EvidenceBadge } from "@/components/shared/EvidenceBadge";
-import { Button } from "@/components/ui/button";
+import { DecisionTrace } from "@/components/decision/DecisionTrace";
 import type { BatchViewData } from "@/demo/scenarios/batchViewData";
 import { formatIndicativeInr, formatSignedIndicativeInr } from "@/lib/formatting/currency";
 import { formatHours } from "@/lib/formatting/number";
+import { addHoursIso, formatTime } from "@/lib/formatting/time";
 
 /**
  * Section 16 — the most important component on the page. Every field is
@@ -25,17 +30,34 @@ export function RecommendationCard({ data }: { data: BatchViewData }) {
         <span className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
           FreshRoute recommendation
         </span>
-        <h2 className="text-2xl font-semibold tracking-tight text-primary">{decision.recommendedAction}</h2>
+        <AnimatePresence mode="wait">
+          <motion.h2
+            key={decision.recommendedAction}
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 6 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="text-2xl font-semibold tracking-tight text-primary"
+          >
+            {decision.recommendedAction}
+          </motion.h2>
+        </AnimatePresence>
       </div>
 
       <div className="flex flex-col gap-3">
-        <Field label="Expected recoverable value" value={formatIndicativeInr(decision.recommendedValue ?? 0)} emphasize />
+        <Field
+          label="Expected recoverable value"
+          value={formatIndicativeInr(decision.recommendedValue ?? 0)}
+          emphasize
+          animateKey={`value-${decision.recommendedValue}`}
+        />
         <Field
           label="Modelled uplift vs current plan"
           value={formatSignedIndicativeInr(decision.modelledUplift ?? 0)}
           tone={(decision.modelledUplift ?? 0) > 0 ? "success" : (decision.modelledUplift ?? 0) < 0 ? "critical" : undefined}
+          animateKey={`uplift-${decision.modelledUplift}`}
         />
-        <Field label="Baseline" value={formatIndicativeInr(decision.baselineValue)} />
+        <Field label="Baseline" value={formatIndicativeInr(decision.baselineValue)} animateKey={`baseline-${decision.baselineValue}`} />
       </div>
 
       <div className="grid grid-cols-2 gap-3 border-t border-border pt-3">
@@ -89,9 +111,7 @@ export function RecommendationCard({ data }: { data: BatchViewData }) {
         )}
       </div>
 
-      <Button variant="outline" size="sm" disabled className="w-full" title="Decision trace arrives in Session 5">
-        View decision trace
-      </Button>
+      <DecisionTrace data={data} />
 
       <p className="border-t border-border pt-3 text-[11px] text-muted-foreground">
         Operator reviews and executes. FreshRoute does not execute pathways automatically.
@@ -101,7 +121,9 @@ export function RecommendationCard({ data }: { data: BatchViewData }) {
 }
 
 function NoFeasiblePathwayCard({ data }: { data: BatchViewData }) {
-  const { decision, currentRemainingUsefulLifeHours, batch } = data;
+  const { decision, currentRemainingUsefulLifeHours, batch, context } = data;
+  const plannedSnapshot = context.marketSnapshots.find((s) => s.marketId === batch.plannedMarketId);
+  const nextReassessmentIso = addHoursIso(batch.telemetry.capturedAtIso, 1);
 
   return (
     <div className="flex flex-col gap-4 rounded-lg border border-destructive/30 bg-card p-5">
@@ -119,12 +141,17 @@ function NoFeasiblePathwayCard({ data }: { data: BatchViewData }) {
       <div className="flex flex-col gap-2 border-t border-border pt-3 text-sm">
         <Field label="Current condition" value={batch.condition} />
         <Field label="Remaining useful life" value={formatHours(currentRemainingUsefulLifeHours)} tone="critical" />
+        <Field
+          label="Last known market state"
+          value={plannedSnapshot ? `${formatIndicativeInr(plannedSnapshot.pricePerKg)}/kg, ${plannedSnapshot.demandSignal.toLowerCase()}` : "—"}
+        />
         <Field label="Baseline (current plan)" value={formatIndicativeInr(decision.baselineValue)} />
       </div>
 
       <div className="flex flex-col gap-1 border-t border-border pt-3">
         <span className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">Next step</span>
         <span className="text-sm text-foreground">Hold and reassess at the next decision window.</span>
+        <span className="font-mono text-xs text-muted-foreground">Next reassessment: {formatTime(nextReassessmentIso)}</span>
       </div>
 
       <p className="border-t border-border pt-3 text-[11px] text-muted-foreground">
@@ -139,20 +166,36 @@ function Field({
   value,
   emphasize,
   tone,
+  animateKey,
 }: {
   label: string;
   value: string;
   emphasize?: boolean;
   tone?: "success" | "critical";
+  animateKey?: string;
 }) {
   const toneClass = tone === "success" ? "text-success" : tone === "critical" ? "text-destructive" : "text-foreground";
+  const valueClassName = emphasize ? `text-lg font-semibold ${toneClass}` : `text-sm font-medium ${toneClass}`;
 
   return (
     <div className="flex items-center justify-between">
       <span className="text-sm text-muted-foreground">{label}</span>
-      <span className={emphasize ? `text-lg font-semibold ${toneClass}` : `text-sm font-medium ${toneClass}`}>
-        {value}
-      </span>
+      {animateKey ? (
+        <AnimatePresence mode="wait">
+          <motion.span
+            key={animateKey}
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 4 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className={valueClassName}
+          >
+            {value}
+          </motion.span>
+        </AnimatePresence>
+      ) : (
+        <span className={valueClassName}>{value}</span>
+      )}
     </div>
   );
 }
