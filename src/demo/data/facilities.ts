@@ -1,0 +1,47 @@
+import type { Facility } from "../../domain/types";
+
+/** Section 29 — the demo's cold store / processor / secondary buyer, reachable from the Tamil Nadu hub. */
+export const facilities: Facility[] = [
+  {
+    id: "facility-secondary-buyer-erode",
+    name: "Erode Secondary Buyer Network",
+    type: "SECONDARY_BUYER",
+    capacityStatus: "AVAILABLE",
+    evidenceTier: "VERIFIED",
+    distanceKm: 90,
+    etaHours: 2,
+    transportCostPerKg: 0.35,
+    handlingCostPerKg: 0.4,
+    storageCostPerKgPerHour: 0,
+    processingCostPerKg: 0,
+    dataProvenance: "SYNTHETIC",
+  },
+  {
+    id: "facility-cold-store-salem",
+    name: "Salem Regional Cold Store",
+    type: "COLD_STORE",
+    capacityStatus: "AVAILABLE",
+    evidenceTier: "PLAUSIBLE_UNVERIFIED",
+    distanceKm: 140,
+    etaHours: 3,
+    transportCostPerKg: 0.45,
+    handlingCostPerKg: 0.3,
+    storageCostPerKgPerHour: 0.05,
+    processingCostPerKg: 0,
+    dataProvenance: "SYNTHETIC",
+  },
+  {
+    id: "facility-processor-coimbatore",
+    name: "Coimbatore Pulp & Puree Unit",
+    type: "PROCESSOR",
+    capacityStatus: "AVAILABLE",
+    evidenceTier: "PLAUSIBLE_UNVERIFIED",
+    distanceKm: 180,
+    etaHours: 4,
+    transportCostPerKg: 0.5,
+    handlingCostPerKg: 0.35,
+    storageCostPerKgPerHour: 0,
+    processingCostPerKg: 2.5,
+    dataProvenance: "SYNTHETIC",
+  },
+];

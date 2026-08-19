@@ -29,7 +29,8 @@ export interface Batch {
   id: string;
   commodity: string;
   originFacilityId: string;
-  destinationFacilityId: string;
+  /** The market the batch is currently planned to be sold at (Section 10 "Current plan: Sell to planned market"). */
+  plannedMarketId: string;
   currentLocationLabel: string;
   quantityKg: number;
   saleableQuantityKg: number;
@@ -71,6 +72,9 @@ export interface Facility {
   type: FacilityType;
   capacityStatus: CapacityStatus;
   evidenceTier: EvidenceTier;
+  distanceKm: number;
+  etaHours: number;
+  transportCostPerKg: number;
   handlingCostPerKg: number;
   storageCostPerKgPerHour: number;
   processingCostPerKg: number;
