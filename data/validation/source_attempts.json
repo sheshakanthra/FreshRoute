@@ -1,0 +1,64 @@
+{
+  "purpose": "Locate an arrivals-quantity source for TN tomato; data.gov.in resource 35985678 has no arrivals field.",
+  "generated_at": "2026-09-09T13:32:59.638607+00:00",
+  "attempts": [
+    {
+      "name": "agmarknet_portal",
+      "url": "https://agmarknet.gov.in/",
+      "attempted_at": "2026-09-09T13:32:57.971775+00:00",
+      "http_status": 200,
+      "bytes": 1003,
+      "elapsed_secs": 0.25,
+      "mentions_arrival": false,
+      "mentions_tonnes": false,
+      "has_download_link": false,
+      "outcome": "REACHED"
+    },
+    {
+      "name": "agmarknet_pricearrival",
+      "url": "https://agmarknet.gov.in/PriceAndArrivals/arrivals.aspx",
+      "attempted_at": "2026-09-09T13:32:58.224685+00:00",
+      "http_status": 200,
+      "bytes": 1003,
+      "elapsed_secs": 0.15,
+      "mentions_arrival": false,
+      "mentions_tonnes": false,
+      "has_download_link": false,
+      "outcome": "REACHED"
+    },
+    {
+      "name": "tn_agrimark",
+      "url": "https://agrimark.tn.gov.in/",
+      "attempted_at": "2026-09-09T13:32:58.371169+00:00",
+      "http_status": 200,
+      "bytes": 80061,
+      "elapsed_secs": 0.57,
+      "mentions_arrival": false,
+      "mentions_tonnes": false,
+      "has_download_link": false,
+      "outcome": "REACHED"
+    },
+    {
+      "name": "tn_uzhavarsandhai",
+      "url": "https://uzhavarsandhai.tn.gov.in/",
+      "attempted_at": "2026-09-09T13:32:58.945218+00:00",
+      "http_status": null,
+      "elapsed_secs": 0.04,
+      "outcome": "FAILED",
+      "error": "URLError(gaierror(11001, 'getaddrinfo failed'))"
+    },
+    {
+      "name": "data_gov_in_root",
+      "url": "https://data.gov.in/",
+      "attempted_at": "2026-09-09T13:32:58.980766+00:00",
+      "http_status": 200,
+      "bytes": 400000,
+      "elapsed_secs": 0.65,
+      "mentions_arrival": false,
+      "mentions_tonnes": false,
+      "has_download_link": false,
+      "outcome": "REACHED"
+    }
+  ],
+  "conclusion": null
+}

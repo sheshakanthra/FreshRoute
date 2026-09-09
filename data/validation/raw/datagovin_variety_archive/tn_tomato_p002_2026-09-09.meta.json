@@ -1,0 +1,22 @@
+{
+  "source": "data.gov.in",
+  "resource_id": "35985678-0d79-46b4-9ed6-6f13308a1d24",
+  "resource_title": "Variety-wise Daily Market Prices Data of Commodity",
+  "url": "https://api.data.gov.in/resource/35985678-0d79-46b4-9ed6-6f13308a1d24?api-key=<DATA_GOV_IN_API_KEY>&format=json&limit=5000&offset=10000&filters%5BState%5D=Tamil+Nadu&filters%5BCommodity%5D=Tomato",
+  "params": {
+    "limit": 5000,
+    "offset": 10000,
+    "format": "json",
+    "filters[State]": "Tamil Nadu",
+    "filters[Commodity]": "Tomato"
+  },
+  "http_status": 200,
+  "fetched_at": "2026-09-09T13:26:22.820430+00:00",
+  "row_count": 5000,
+  "reported_total": 126578,
+  "sha256": "51bd213fe2070cb1b03d6d5fca6ccaa167c2078ca5212005f414770b3f4f050c",
+  "bytes": 2111023,
+  "elapsed_secs": 5.81,
+  "license": "https://data.gov.in/government-open-data-license-india",
+  "raw_file": "tn_tomato_p002_2026-09-09.json"
+}

@@ -1,0 +1,74 @@
+{
+  "Dindigul (Uzhavar Sandhai) | Deshi": {
+    "days": 314,
+    "changes": 202,
+    "change_pct": 64.5,
+    "max_run": 10,
+    "runs_ge_7": 1,
+    "consecutive_day_repeats": 108,
+    "distinct_values": 54,
+    "grid_250_frac": 0.43,
+    "min": 12.5,
+    "max": 70.0
+  },
+  "Hasthampatti (Uzhavar Sandhai) | Deshi": {
+    "days": 144,
+    "changes": 106,
+    "change_pct": 74.1,
+    "max_run": 7,
+    "runs_ge_7": 1,
+    "consecutive_day_repeats": 27,
+    "distinct_values": 49,
+    "grid_250_frac": 0.22,
+    "min": 9.0,
+    "max": 64.0
+  },
+  "Hasthampatti (Uzhavar Sandhai) | Local": {
+    "days": 133,
+    "changes": 112,
+    "change_pct": 84.8,
+    "max_run": 3,
+    "runs_ge_7": 0,
+    "consecutive_day_repeats": 16,
+    "distinct_values": 40,
+    "grid_250_frac": 0.28,
+    "min": 11.5,
+    "max": 42.5
+  },
+  "Chokkikulam (Uzhavar Sandhai) | Deshi": {
+    "days": 313,
+    "changes": 217,
+    "change_pct": 69.6,
+    "max_run": 7,
+    "runs_ge_7": 1,
+    "consecutive_day_repeats": 91,
+    "distinct_values": 60,
+    "grid_250_frac": 0.35,
+    "min": 13.0,
+    "max": 69.0
+  },
+  "Palladam (Uzhavar Sandhai) | Local": {
+    "days": 157,
+    "changes": 67,
+    "change_pct": 42.9,
+    "max_run": 11,
+    "runs_ge_7": 4,
+    "consecutive_day_repeats": 80,
+    "distinct_values": 27,
+    "grid_250_frac": 0.26,
+    "min": 12.0,
+    "max": 42.0
+  },
+  "Denkanikottai (Uzhavar Sandhai) | Deshi": {
+    "days": 300,
+    "changes": 149,
+    "change_pct": 49.8,
+    "max_run": 18,
+    "runs_ge_7": 4,
+    "consecutive_day_repeats": 137,
+    "distinct_values": 27,
+    "grid_250_frac": 0.67,
+    "min": 9.0,
+    "max": 62.5
+  }
+}
