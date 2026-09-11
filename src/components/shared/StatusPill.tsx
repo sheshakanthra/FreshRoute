@@ -15,7 +15,9 @@ const statusPillVariants = cva(
         neutral: "border-border bg-secondary text-secondary-foreground",
         success: "border-success/30 bg-success/10 text-success",
         warning: "border-warning/30 bg-warning/10 text-warning",
-        critical: "border-destructive/30 bg-destructive/10 text-destructive",
+        // 5% tint, not 10%: #ef4444 on a 10% self-tint over --card measures 4.45:1,
+        // just under WCAG AA for this pill's text size. At 5% it measures 4.68:1.
+        critical: "border-destructive/40 bg-destructive/5 text-destructive",
         info: "border-primary/30 bg-primary/10 text-primary",
       },
     },

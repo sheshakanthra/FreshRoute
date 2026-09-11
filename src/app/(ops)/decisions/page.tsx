@@ -25,7 +25,7 @@ export default async function DecisionsPage() {
   const recordedOutcomes = outcomeRows.filter((r) => r.outcome_record_id !== null);
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6 p-4 sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex flex-col gap-1">
           <h1 className="text-lg font-semibold tracking-tight">Decisions</h1>
@@ -61,11 +61,15 @@ export default async function DecisionsPage() {
               <Link
                 key={entry.batch.id}
                 href={`/batches/${entry.batch.id}`}
-                className="flex flex-wrap items-center gap-6 rounded-lg border border-border bg-card p-4 transition-colors hover:bg-accent/40"
+                className={`flex flex-wrap items-center gap-6 rounded-lg border border-border border-l-2 bg-card p-4 transition-colors hover:bg-accent/40 ${
+                  entry.displayStatus === "AT_RISK" ? "border-l-destructive/70" : "border-l-transparent"
+                }`}
               >
                 <div className="flex min-w-[110px] flex-col gap-0.5">
-                  <span className="font-mono text-sm font-semibold text-foreground">{entry.batch.id}</span>
-                  <span className="text-xs text-muted-foreground">{entry.batch.commodity}</span>
+                  <span className="font-mono text-sm text-foreground" title={entry.batch.id}>
+                    {entry.batch.id.slice(0, 8)}
+                  </span>
+                  <span className="text-[11px] text-muted-foreground">{entry.batch.commodity}</span>
                 </div>
 
                 <StatusPill tone={STATUS_TONE[entry.displayStatus]}>{STATUS_LABEL[entry.displayStatus]}</StatusPill>
@@ -123,38 +127,61 @@ export default async function DecisionsPage() {
               return (
                 <div
                   key={row.recommendation_id}
-                  className="flex flex-wrap items-center gap-6 rounded-lg border border-border bg-card p-4"
+                  className="flex flex-wrap items-center gap-x-8 gap-y-4 rounded-lg border border-border bg-card p-4"
                 >
-                  <div className="flex min-w-[110px] flex-col gap-0.5">
-                    <span className="font-mono text-sm font-semibold text-foreground">{row.batch_id}</span>
-                    <span className="text-xs text-muted-foreground">{row.executed_action_code ?? row.chosen_action_code}</span>
-                  </div>
-                  <div className="flex min-w-[100px] flex-col gap-0.5">
-                    <span className="text-[11px] text-muted-foreground">Expected</span>
-                    <span className="font-mono text-sm text-foreground tabular-nums">{formatIndicativeInr(expected)}</span>
-                  </div>
-                  <div className="flex min-w-[100px] flex-col gap-0.5">
-                    <span className="text-[11px] text-muted-foreground">Realized</span>
-                    <span className="font-mono text-sm text-foreground tabular-nums">
-                      {realized !== null ? formatIndicativeInr(realized) : "—"}
+                  <div className="flex min-w-[150px] flex-col gap-0.5">
+                    <span className="font-mono text-sm text-foreground" title={row.batch_id}>
+                      {row.batch_id.slice(0, 8)}
+                    </span>
+                    <span className="text-[11px] text-muted-foreground">
+                      {row.executed_action_code ?? row.chosen_action_code}
                     </span>
                   </div>
+
+                  {/* Expected -> realized is one comparison, not three columns:
+                      the two figures sit on one baseline with the arrow
+                      between them, and only the delta carries weight. */}
+                  <div className="flex items-end gap-3">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-[11px] text-muted-foreground">Expected</span>
+                      <span className="font-mono text-sm tabular-nums text-muted-foreground">
+                        {formatIndicativeInr(expected)}
+                      </span>
+                    </div>
+                    <span className="pb-0.5 text-xs text-muted-foreground" aria-hidden="true">
+                      →
+                    </span>
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-[11px] text-muted-foreground">Realized</span>
+                      <span className="font-mono text-sm font-medium tabular-nums text-foreground">
+                        {realized !== null ? formatIndicativeInr(realized) : "—"}
+                      </span>
+                    </div>
+                  </div>
+
                   {delta !== null && (
-                    <div className="flex min-w-[100px] flex-col gap-0.5">
-                      <span className="text-[11px] text-muted-foreground">Delta</span>
+                    <div className="flex flex-col gap-0.5">
+                      {/* The word carries the sign for anyone who cannot use
+                          the colour; the arrow glyph carries it for anyone
+                          scanning. */}
+                      <span className="text-[11px] text-muted-foreground">
+                        {delta >= 0 ? "Above expected" : "Below expected"}
+                      </span>
                       <span
-                        className={`font-mono text-sm tabular-nums ${delta >= 0 ? "text-success" : "text-destructive"}`}
+                        className={`font-mono text-base font-semibold tabular-nums ${
+                          delta >= 0 ? "text-success" : "text-destructive"
+                        }`}
                       >
+                        <span aria-hidden="true">{delta >= 0 ? "▲ " : "▼ "}</span>
                         {formatSignedIndicativeInr(delta)}
                       </span>
                     </div>
                   )}
-                  <div className="ml-auto flex flex-col gap-0.5 text-right">
-                    <span className="text-[11px] text-muted-foreground">Recorded</span>
-                    <span className="text-xs text-muted-foreground">
-                      {row.outcome_recorded_at ? new Date(row.outcome_recorded_at).toLocaleDateString() : "—"}
-                    </span>
-                  </div>
+
+                  <span className="ml-auto text-[11px] text-muted-foreground">
+                    Recorded{" "}
+                    {row.outcome_recorded_at ? new Date(row.outcome_recorded_at).toLocaleDateString() : "—"}
+                  </span>
                 </div>
               );
             })}

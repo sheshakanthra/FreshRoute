@@ -14,9 +14,27 @@ const RISK_TONE: Record<RiskLevel, "success" | "warning" | "critical"> = {
   HIGH: "critical",
 };
 
-/** Section 13 — one pathway's row in the ranking: action, evidence, feasibility, expected recovery, cost, risk, rank. */
+/**
+ * Section 13 — one pathway's row in the ranking: action, evidence,
+ * feasibility, expected recovery, cost, risk, rank.
+ *
+ * Feasible-vs-infeasible is now readable without reading any text, and the
+ * work is done by the losers going quiet rather than the winner shouting:
+ * the "Feasible" marker dropped to muted (it is the normal case, on four or
+ * five of six rows), leaving the destructive "Infeasible" marks as the only
+ * coloured feasibility signals in the list. Infeasible rows also strike
+ * through their action name — a shape carrier, so the de-emphasis does not
+ * depend on colour — and drop to muted figures. Deliberately NOT done with
+ * `opacity`: a 55% muted-foreground over --card measures 2.8:1 and would put
+ * the infeasible reasons below WCAG AA.
+ *
+ * The rank-1 feasible row gets a thin primary edge and a 6% tint. Its
+ * infeasibility reason, evidence tier and assumption flags are untouched on
+ * every row.
+ */
 export function PathwayCard({ candidate }: { candidate: RankedAction }) {
   const isFeasible = candidate.feasible;
+  const isWinner = isFeasible && candidate.rank === 1;
   const isAssumptionDependent = candidate.evidenceTier === "PLAUSIBLE_UNVERIFIED";
   const assumptionText =
     isAssumptionDependent && (candidate.action === "REROUTE" || candidate.action === "STORE" || candidate.action === "PROCESS")
@@ -26,23 +44,37 @@ export function PathwayCard({ candidate }: { candidate: RankedAction }) {
   return (
     <div
       className={cn(
-        "flex flex-col gap-2 rounded-lg border p-3",
-        isFeasible ? "border-border bg-card" : "border-border/60 bg-card/50",
+        "flex flex-col gap-2 rounded-lg border p-3 transition-colors duration-300",
+        isWinner
+          ? "border-primary/40 bg-primary/[0.06]"
+          : isFeasible
+            ? "border-border bg-card"
+            : "border-border/50 bg-card/40",
       )}
     >
       <div className="flex flex-wrap items-center gap-3">
-        <span className="w-8 font-mono text-xs text-muted-foreground">
+        <span
+          className={cn(
+            "w-8 font-mono text-xs tabular-nums",
+            isWinner ? "font-semibold text-primary" : "text-muted-foreground",
+          )}
+        >
           {candidate.rank > 0 ? `#${candidate.rank}` : "—"}
         </span>
 
-        <span className={cn("w-20 text-sm font-semibold", !isFeasible && "text-muted-foreground")}>
+        <span
+          className={cn(
+            "w-20 text-sm font-semibold",
+            isFeasible ? "text-foreground" : "text-muted-foreground line-through decoration-1",
+          )}
+        >
           {candidate.action}
         </span>
 
         <EvidenceBadge tier={candidate.evidenceTier} />
 
         {isFeasible ? (
-          <span className="inline-flex items-center gap-1 text-xs text-success">
+          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
             <CheckCircle2 className="size-3.5" aria-hidden="true" />
             Feasible{isAssumptionDependent ? "*" : ""}
           </span>
@@ -56,7 +88,10 @@ export function PathwayCard({ candidate }: { candidate: RankedAction }) {
         <div className="ml-auto flex items-center gap-4">
           <Figure label="Expected recovery" value={formatIndicativeInr(candidate.expectedRecovery)} muted={!isFeasible} />
           <Figure label="Cost" value={formatIndicativeInr(candidate.cost)} muted={!isFeasible} />
-          <StatusPill tone={RISK_TONE[candidate.riskLevel]}>{candidate.riskLevel}</StatusPill>
+          {/* Risk level is moot on a pathway that cannot be taken, so an
+              infeasible row shows it without the tone colouring. The label
+              text is unchanged either way. */}
+          <StatusPill tone={isFeasible ? RISK_TONE[candidate.riskLevel] : "neutral"}>{candidate.riskLevel}</StatusPill>
         </div>
       </div>
 

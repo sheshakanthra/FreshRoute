@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import { MotionConfig } from "framer-motion";
 import { useRouter } from "next/navigation";
 
 import { BatchHeader } from "@/components/batch/BatchHeader";
@@ -93,6 +94,10 @@ export function BatchWorkspace({
   }
 
   return (
+    // Section 8 — every framer-motion transition in this subtree is disabled
+    // for anyone whose OS asks for reduced motion; the CSS transitions are
+    // covered by the prefers-reduced-motion block in globals.css.
+    <MotionConfig reducedMotion="user">
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <BatchHeader data={data} />
@@ -134,26 +139,36 @@ export function BatchWorkspace({
           />
         </div>
 
+        {/*
+          Supporting column. The six-pathway comparison leads it: the required
+          reading order is state -> risk -> recommendation -> why -> operator
+          action -> comparison/trace, and at narrow widths this column follows
+          the recommendation column in the DOM, so placing DecisionEngine
+          first here puts the comparison immediately after the decision it
+          explains instead of three panels below it. Reordered by physical
+          source order, not CSS `order`.
+        */}
         <div className="flex flex-col gap-6 xl:col-start-1 xl:row-start-1">
+          <div id="decision-engine-panel">
+            <DecisionEngine decision={data.decision} />
+          </div>
+
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <ConditionPanel data={data} />
             <LogisticsPanel data={data} />
           </div>
-
-          <TelemetryForm batchId={baseline.batchId} />
 
           <MarketPanel
             data={data}
             priceTrends={Object.fromEntries(baseline.markets.map((m) => [m.id, m.priceTrend ?? []]))}
           />
 
-          <div id="decision-engine-panel">
-            <DecisionEngine decision={data.decision} />
-          </div>
+          <TelemetryForm batchId={baseline.batchId} />
 
           <EventTimeline activeScenarioId={scenario.id} onScenarioChange={setScenario} />
         </div>
       </div>
     </div>
+    </MotionConfig>
   );
 }

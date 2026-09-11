@@ -13,7 +13,7 @@ export default async function DashboardPage() {
   const outcomeKpis = computeOutcomeKpis(outcomeRows);
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6 p-4 sm:p-6">
       <div className="flex flex-col gap-1">
         <h1 className="text-lg font-semibold tracking-tight">Operations Center</h1>
         <p className="text-sm text-muted-foreground">

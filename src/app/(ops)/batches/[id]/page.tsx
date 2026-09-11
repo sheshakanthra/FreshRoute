@@ -28,7 +28,7 @@ export default async function BatchDetailPage({ params }: PageProps<"/batches/[i
   const outcome = latestRecommendation ? await getOutcomeForRecommendation(latestRecommendation.id) : null;
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6 p-4 sm:p-6">
       <Link href="/dashboard" className="w-fit text-xs text-muted-foreground hover:text-foreground">
         ← Back to Operations Center
       </Link>
