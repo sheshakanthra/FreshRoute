@@ -1065,4 +1065,6 @@ It is what the batch can still become.**
 
 And the website field should be:
 
+d-freshroute.vercel.app
+
 That will make the repo landing page immediately communicate **what FreshRoute actually is**, instead of just saying "AI agriculture project."
