@@ -14,7 +14,7 @@ export function DemoBanner({ compact = false, className }: { compact?: boolean; 
       </span>
       {!compact && (
         <span className="font-mono text-xs text-muted-foreground">
-          Synthetic telemetry · indicative market values
+          Real market prices (market_price) · manually entered telemetry · indicative logistics &amp; facilities
         </span>
       )}
     </div>
