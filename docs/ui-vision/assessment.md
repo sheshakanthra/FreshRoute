@@ -1,10 +1,18 @@
 # FreshRoute — Vision vs. Implementation Assessment
 
 Maps every element of `docs/ui-vision/vision.md` against the current codebase
-(`src/app`, `src/components`, `src/domain`, `src/demo`) and the current data
-state (`STAGE0.md`, `docs/data/schema-notes.md`,
-`docs/data/schema-implications.md`, `docs/data/validation-report.md`).
+(`src/app`, `src/components`, `src/domain`, `src/server`, `src/demo`) and the
+current data state (live Postgres, queried directly for this assessment).
 Read-only inspection — no code changed, no git run.
+
+**This replaces `docs/ui-vision/assessment.md` as it stood after Stage 0's
+D0/D1 sessions.** That version is preserved at
+`docs/ui-vision/assessment-pre-stage0.md` — it was accurate when written, but
+D2, D3, and D4 have since shipped, and it says so throughout ("D2 not
+started," "the app reads exclusively from hard-coded arrays," "D4 not
+started, empty tables with no writer"). None of that is true anymore. Every
+claim below was re-verified directly against the current code and a live
+query against the database — not inherited from the old document.
 
 ## Categories
 
@@ -13,64 +21,101 @@ Read-only inspection — no code changed, no git run.
 | **A** | Already exists, preserve as-is |
 | **B** | Already exists, needs UI/UX evolution |
 | **C** | Genuinely missing |
-| **D** | Requires backend / data / decision-engine work not yet started |
-| **E** | Can be implemented now against existing mock data |
-| **F** | Defer until Stage 0 is further along (D2/D3/D4-gated) |
+| **D** | Needs new decision-engine/computation logic — data to drive it already exists |
+| **E** | Can be implemented now against existing real data — UI/aggregation work only |
+| **F** | Blocked on a real-world data source this codebase cannot manufacture (external sourcing, not a coding task) |
 
 ## Where Stage 0 actually stands right now
 
-This matters for almost every F below. As of this assessment:
+- **D0** (data verification): done, unchanged. Arrivals/demand quantity
+  confirmed absent at every source tried — `demand_source = 'ABSENT'` on
+  **115,538 / 115,538** `market_price` rows, re-queried directly for this
+  assessment. Still 100%, still permanent, not a queue position.
+- **D1** (schema + migrations): done, unchanged.
+- **D2** (ingestion pipeline): **done.** `market_price` has **115,538** real
+  Tamil Nadu tomato rows (re-queried directly), ~26 months.
+- **D3** (persistence swap): **done.** Every operational route
+  (`/dashboard`, `/batches`, `/batches/[id]`, `/decisions`) is marked
+  `export const dynamic = "force-dynamic"` and reads through real
+  server-side functions — `getRealBatchDashboardEntries()`,
+  `buildRealBatchBaseline()` — backed by Postgres repositories, confirmed by
+  reading all four page files directly. `src/demo/` is **not** dead code,
+  but its role changed: components still import from it, but only for
+  shared **types** (`BatchViewData`, `BatchDashboardEntry`, `DashboardKpis`),
+  pure **display helpers** (`buildTemperatureTrend`, `computeDisplayStatus`),
+  and the **scenario-simulator's curated presets**
+  (`CURATED_SCENARIOS`) — a disclosed, intentional "what-if" overlay on a
+  real batch's real baseline, not a hidden fake-data path. Verified by
+  grepping every `@/demo` import outside `src/demo/` itself and checking
+  what each one actually imports — no component reads the old hard-coded
+  batch/market arrays for real-page data anymore.
+- **D4** (outcome capture): **done.** Re-queried directly:
+  `recommendation` has 5 rows across every status
+  (2 ISSUED, 1 ACCEPTED, 1 REJECTED, 1 OVERRIDDEN),
+  `recommendation_candidate` has 30 (5 × 6, matching the engine's
+  always-six-candidates design), `action_execution` has 2,
+  `outcome_record` has 1 — thin, but genuinely populated, not zero. The
+  `recommendation_outcomes` SQL view (D1's migration) returns a real,
+  fully-joined row end to end: expected ₹50,265.83 → executed SELL →
+  realized ₹48,900.50, 42.30 kg loss, a named actual destination. That row
+  **is** the vision's own Section 14 worked example, for real, today.
+  `RecommendationExecutionPanel.tsx` (not `RecommendationCard.tsx` — that's
+  the live, unpersisted preview) implements Accept / Reject / Override /
+  Record-outcome against this data via server actions in
+  `src/app/(ops)/batches/outcomeActions.ts`, confirmed by reading the full
+  component. A CSV export exists at `/api/export/recommendation-outcomes`.
+- **Facility economics**: `storage_facility` has 143 real, source-cited rows
+  and `processing_facility` has 4 — all still `NULL` on every economics
+  column (`cost_per_kg_per_day`/`max_storage_days`/`storage_temp_c` for
+  storage; `gate_price_per_kg`/`yield_ratio`/`min_quality_score` for
+  processing), re-confirmed by direct query. Confirmed the type-predicate
+  fix (`hasCompleteStorageEconomics` / `hasCompleteProcessingEconomics` in
+  `buildRealBatchBaseline.ts`) is still in place — both grep to real,
+  in-use functions — so these rows are correctly excluded from
+  `evaluateDecision()`'s candidate set rather than silently priced at
+  zero/free. STORE and PROCESS remain genuinely infeasible for every real
+  batch, honestly, not by omission.
 
-- **D0** (data verification): PARTIAL. Real TN tomato price data was pulled
-  and measured (`docs/data/validation-report.md`), but **arrivals/demand
-  quantity is confirmed absent at every source tried** — not sparse, absent.
-  `demand_source` will be `ABSENT` on effectively 100% of real rows.
-- **D1** (schema + migrations): done. 17 tables exist in the live Neon
-  database, including `recommendation`, `recommendation_candidate`,
-  `action_execution`, and `outcome_record` — but **nothing writes to any of
-  them yet**. `market_price` has 0 rows (D2 loads it).
-- **D2** (ingestion pipeline): not started. No real prices are in the app.
-- **D3** (persistence swap): not started. The app reads **exclusively** from
-  hard-coded arrays in `src/demo/data/*` — there is no database call
-  anywhere in `src/app`, `src/components`, or the engine's call path.
-- **D4** (outcome capture): not started. `action_execution` and
-  `outcome_record` are empty tables with no writer.
-
-So: **every UI element below that implies persisted recommendation history,
-executed actions, or realized-vs-expected outcomes is gated on D3 and/or
-D4**, regardless of how simple it looks visually. These are marked **F** and
-called out again in their own section at the end.
+So the framing has flipped from the previous assessment: **almost nothing
+is now gated on "D2/D3/D4 not started."** What's left gated is either a
+genuine future data source (real facility tariffs, real routing/logistics,
+real demand signals) or plain UI work against data that already exists.
 
 ---
 
 ## Summary counts
 
-| Category | Count (approx., by distinguishable element) |
-|---|---|
-| A — preserve as-is | 15 |
-| B — needs UI/UX evolution | 11 |
-| C — genuinely missing | 7 |
-| D — backend/engine work not started | 9 |
-| E — implementable now on mock data | 5 |
-| F — Stage-0-gated | 9 |
+Counted by tallying every distinguishable table row across the sections
+below (not the closing recap tables, which restate rows already counted
+here) — a stricter, row-level methodology than the previous assessment
+used, so the raw numbers aren't directly comparable; the *direction* of
+each change is the meaningful signal.
 
-The two headline findings:
+| Category | Count (approx., by distinguishable element) | Direction vs. pre-Stage-0 assessment |
+|---|---|---|
+| A — preserve as-is | 37 | Up sharply — every D3/D4-backed element |
+| B — needs UI/UX evolution | 16 | Up — several D-items became "data's real, UI isn't built" |
+| C — genuinely missing | 4 | Unchanged in substance (frontend/visualization work, untouched) |
+| D — needs new engine/computation logic | 1 | Down sharply — only "Avoided spoilage %" remains |
+| E — implementable now on real data | 7 | Up — the fastest-growing category |
+| F — blocked on an external data source | 6 | Down in kind, not just count — demand signals were always here; facility tariffs, real routing, live integrations, and other-crop data joined it under the tightened D-vs-F split (see the note in Section 9) |
 
-1. **The decision engine, explainability, and "realistic data" discipline the
-   vision asks for are already real and unusually well-built** — they are
-   the strongest part of this codebase, not a gap. `evaluateDecision()` is a
-   genuine, framework-free, six-pathway economic evaluator
-   (`src/domain/engine/`), and `DecisionTrace.tsx` already exposes exactly
-   the input → feasibility → value → ranking → explanation → provenance
-   chain the vision describes in Section 4 and Section 15.
-2. **Everything visual/cinematic (Section 1), geographic (Section 5's map),
-   and outcome-loop (Sections 5, 8, 14) is missing or gated**, and these are
-   three structurally different kinds of "missing": Section 1 is a pure
-   frontend build (no backend dependency, **E/C**), Section 5's map needs a
-   new capability plus geo data that doesn't exist even in mock form
-   (**C**), and the outcome loop cannot be honestly built until D4 exists
-   (**F**) — building it now would mean fabricating the exact kind of number
-   the vision's own Section 10 prohibits.
+The two headline findings, updated:
+
+1. **The outcome loop is real now, not just architecturally ready.** The
+   previous assessment's single biggest caveat — "Section 8's
+   Accept/Execute/Override, Section 14's outcome learning, Section 5's
+   Value Recovered / Spoilage Avoided KPIs all require D4, which hasn't
+   started" — no longer holds. D4 shipped. The mechanism is real, exercised
+   with real rows, and the vision's own worked example is now a real
+   database row, not a schema waiting for data.
+2. **What's left in category F has shrunk to almost nothing, and what
+   remains is a genuinely different kind of gap** than before: not "the
+   backend work hasn't started," but "a UI element hasn't been built yet
+   against data that already exists" (now **E**, the fastest-growing
+   category), or "a data source doesn't exist and may never
+   (`demand_source`, real facility tariffs)," which is a permanent
+   characteristic of this problem space, not a sequencing gap.
 
 ---
 
@@ -78,205 +123,224 @@ The two headline findings:
 
 | Element | Category | Evidence |
 |---|---|---|
-| Product definition: AI decision-support for perishable supply chains, TN tomato focus | **A** | `README.md`; `docs/data/schema-notes.md` seeds `commodity.code = 'TOMATO'`; entire demo dataset and D0 pull are TN-tomato-first |
-| "Serious operational intelligence platform, not generic SaaS" visual personality | **B** | Dark, fixed (no light mode) industrial theme already exists (`src/app/globals.css:56-100`), explicitly documented as deliberate ("this is a fixed, always-dark industrial control surface, not a themeable consumer product"). Foundation is right; execution is still spare/utilitarian, not yet "premium/cinematic." |
-| Avoid-list (glassmorphism, gradients, glow, decorative AI effects, generic AI marketing copy) | **A** | Confirmed by reading every component: no gradients, no blur/glass, no glow. `DemoBanner.tsx` comment is explicit: "not a warning banner — no alarming color, no dismiss action, no apology copy." This restraint is already a house style. |
-| "PERISHABILITY IS A CLOCK" as the explicit narrative frame | **B** | Root page (`src/app/page.tsx:31-33`) has a *related* line ("Every hour changes the value of fresh produce") but not the literal clock framing or the time-pressure visual treatment the vision describes. |
+| Product definition: AI decision-support for perishable supply chains, TN tomato focus | **A** | Unchanged, now backed by real TN tomato price data end to end rather than just a schema/seed comment. |
+| "Serious operational intelligence platform, not generic SaaS" visual personality | **B** | Unchanged — dark, fixed industrial theme confirmed still in place (`src/app/globals.css`); still spare/utilitarian rather than "premium/cinematic." No frontend visual work has happened since the last assessment. |
+| Avoid-list (glassmorphism, gradients, glow, decorative AI effects, generic AI marketing copy) | **A** | Re-confirmed by reading `DemoBanner.tsx` and every panel component touched during this pass — no gradients/blur/glow anywhere, restraint intact. |
+| "PERISHABILITY IS A CLOCK" as the explicit narrative frame | **B** | Unchanged — root page still carries the related-but-not-literal "Every hour changes the value of fresh produce" line. |
 
 ---
 
 ## 1. Cinematic Landing / System Introduction
 
+No frontend work has happened here since the previous assessment — every row is unchanged.
+
 | Element | Category | Evidence |
 |---|---|---|
-| An entry screen distinct from the operational app | **A** | `src/app/page.tsx` is deliberately not wrapped in `AppShell` (`AppShell.tsx:6-10` comment: "The entry screen at '/' does not use this shell; it is the product intro, not an operations view.") |
-| Hero headline + primary CTA into the product | **B** | Exists (`FreshRoute` / "Every hour changes the value of fresh produce" / "ENTER OPERATIONS" button), functionally equivalent to the vision's hero + "Explore the system" CTA, but plain centered text — no cinematic treatment. |
-| FARM → COLLECTION → CONDITION → MARKET → DECISION visual pipeline | **B** | A schematic seed exists: the footer renders `Condition · Market · Logistics · Economics → Decision` as bordered chips (`page.tsx:8, 50-61`) — same idea, different/fewer stages, purely textual. Not a supply-chain visual narrative. |
-| Cinematic visual assets, purposeful motion showing origin/collection/transport/condition change/time pressure | **C** | Nothing exists. No video/image asset pipeline, no `framer-motion` usage on this page at all (it's used elsewhere — `RankingList`, `RecommendationCard`, `EventTimeline` — just not here). |
-| Seamless intro → product transition | **E** | Pure routing/animation work against the existing `/dashboard` link; no backend dependency. |
+| An entry screen distinct from the operational app | **A** | `src/app/page.tsx` still deliberately outside `AppShell`. |
+| Hero headline + primary CTA into the product | **B** | Unchanged. |
+| FARM → COLLECTION → CONDITION → MARKET → DECISION visual pipeline | **B** | Unchanged — the footer's `Condition · Market · Logistics · Economics → Decision` chip row is the same seed as before. |
+| Cinematic visual assets, purposeful motion | **C** | Unchanged — no asset pipeline, no motion on this page. |
+| Seamless intro → product transition | **E** | Unchanged — pure frontend work, no backend dependency, now or before. |
 
 ---
 
 ## 2. Batch Intelligence
 
-| Element | Category | Evidence |
-|---|---|---|
-| Single-page, consolidated batch state (no hunting across screens) | **A** | `/batches/[id]` → `BatchWorkspace.tsx` already assembles header, condition, logistics, market, decision engine, timeline, and recommendation on one page from one computed `BatchViewData`. |
-| Batch ID, product, quantity, current plan, location | **A** | `BatchHeader.tsx:36-52` |
-| Remaining shelf life | **A** | `computeCurrentRemainingUsefulLifeHours()` (`src/domain/engine/rul.ts`), surfaced in `BatchHeader` and `ConditionPanel`. Vision shows it in days (4.7 days); engine currently outputs/formats hours (`formatHours`) — a formatting change, not new logic — **B** for the days-vs-hours display choice specifically. |
-| Continuous "condition: 68%" style score | **D** | The engine's `BatchCondition` is a **3-step categorical enum** (`HEALTHY / MODERATE / DEGRADED`, `src/domain/types/enums.ts`), not a continuous percentage. A real 0–100 quality score requires new engine logic. Notably, **the D1 database schema already has the right column for this** — `condition_assessment.quality_score numeric(5,2)` (`src/db/schema/batch.ts`) — but nothing computes or writes to it yet. This is real decision-engine work, independent of D2/D3/D4. |
-| Market value / projected loss figures | **E** | Not currently exposed as named fields, but **fully derivable today from existing computed values**: `grossPlannedValue` (quantity × indicative base price, already computed in `dashboardDecisions.ts:37`) minus `decision.baselineValue` (already computed by the engine) = projected loss. No new backend or data needed. |
-| "This batch is losing economic value with time" as the framed central problem | **B** | The data to show this exists (RUL ticking down, uplift/baseline deltas); it isn't yet framed as a single explicit statement anywhere in the UI. |
+| Element | Category | Evidence | Moved? |
+|---|---|---|---|
+| Single-page, consolidated batch state | **A** | `/batches/[id]` → `BatchWorkspace.tsx` still assembles everything on one page — now from a real `buildRealBatchBaseline()` baseline instead of a demo-array lookup. | No (was already A; now backed by real data) |
+| Batch ID, product, quantity, current plan, location | **A** | `BatchHeader.tsx` — unchanged fields, real values. | No |
+| Remaining shelf life | **B** | Still hours, not days (`formatHours`) — a display-format choice, unchanged. | No |
+| Continuous "condition: 68%" style score | **B** | **Moved from D.** The computation now genuinely exists and runs: `computeConditionAssessment()` (`src/server/assessment/`) computes a real 0–100 `qualityScore` from real telemetry and the commodity's sourced decay parameters, and `condition_assessment.quality_score` is populated (2 real rows, confirmed by query). It's just not displayed as a number anywhere persistent — `ConditionPanel.tsx` still only renders the 3-band categorical `batch.condition` via `StatusPill`; the numeric score currently surfaces only transiently, in `TelemetryForm`'s one-off "Recorded. Derived condition: HEALTHY (quality 97/100)" success message. This is now a UI-surfacing gap, not a missing computation. |
+| Market value / projected loss figures | **B** | **Moved from E.** `BatchHeader`'s "Economics" column already shows "Current expected recovery" (`decision.baselineValue`, real) and "Potential recovery range" across feasible candidates — close to, but not literally, the vision's "Market value / Projected loss" pairing. The subtraction to get an explicit "projected loss" figure is still not a named field. |
+| "This batch is losing economic value with time" as the framed central problem | **B** | Unchanged — the data now more strongly supports this framing (real RUL, real recovery range) but it's still not stated as one explicit sentence anywhere. |
 
 ---
 
 ## 3. FreshRoute Decision Engine
 
-| Element | Category | Evidence |
-|---|---|---|
-| Real six-pathway economic evaluator (SELL/DISCOUNT/DIVERT/REROUTE/STORE/PROCESS) | **A** | `src/domain/engine/evaluators.ts` — genuinely computes feasibility, path-aware RUL, and `expectedRecovery` per pathway from the actual context; nothing hard-coded to win (confirmed by reading all six functions). This is the strongest asset in the codebase relative to the vision. |
-| Candidates compared, not a single unexplained answer | **A** | `RankingList` / `PathwayCard` render all six, feasible and infeasible, with rank, cost, risk, evidence tier. |
-| Mock data structured so it's replaceable without rebuilding the UI | **A** | Clean separation: `src/demo/data` (raw mock entities) → `src/demo/scenarios/buildContext.ts` (assembly into `DecisionContext`) → `src/domain/engine` (pure, framework-free) → components (read only typed engine output). This is precisely what vision Section 10 asks for, already built. |
-| "MARKET / QUALITY / SHELF LIFE / LOGISTICS / PROCESSING / STORAGE → ENGINE → RECOMMENDED INTERVENTION" as a **visual diagram** | **C** | The computation exists; the diagram/visualization of inputs flowing into the engine does not. `DecisionEngine.tsx` renders straight to the ranking list, no input-flow visual. |
-| "Expected recovery" / "Transport cost" figures | **A** | `RankedAction.expectedRecovery`, `PathwayCard`'s cost figure. |
-| "Avoided spoilage: 23%" style figure | **D** | Not computed anywhere today. Derivable in principle from saleable-fraction math (`computeFreshSaleableFraction` / `computeProcessSaleableFraction` in `economics.ts`) versus a spoiled/baseline case, but that comparison doesn't exist as an engine output yet — new engine logic, not just new UI. |
-| "Confidence: 87%" style numeric figure | **D — and a product decision, not just an implementation gap** | See the callout below. The engine deliberately does **not** produce a calibrated percentage — `confidenceStatus` is a single-value enum, `"SIMULATION-LIMITED"` (`src/domain/types/enums.ts`, `evaluateDecision.ts:49,73`). This is intentional (README: "never presented as a calibrated, [percentage-style confidence]"). |
+| Element | Category | Evidence | Moved? |
+|---|---|---|---|
+| Real six-pathway economic evaluator | **A** | `src/domain/engine/evaluators.ts` — confirmed unchanged in this pass except one deliberate, narrow addition: `computeQ10RateMultiplier` in `rul.ts` (a later session wired the commodity's sourced Q10 respiration coefficient into the thermal-exposure calculation — an addition to the RUL model, not a rewrite; every other evaluator function is untouched). Still nothing hard-coded to win. | No (strengthened) |
+| Candidates compared, not a single unexplained answer | **A** | Unchanged. | No |
+| Mock data structured so it's replaceable without rebuilding the UI | **A** | **This is the headline confirmation of the whole assessment.** The exact separation the old assessment praised as forward-looking architecture — `demo/data` → `buildContext` → engine → components — has now literally happened for the real path: `server/repositories` + `buildRealBatchBaseline` → the same unmodified `buildRealDecisionContext`/`evaluateDecision` → the same components. The prediction came true without a UI rebuild. | No (validated) |
+| "MARKET / QUALITY / SHELF LIFE / LOGISTICS / PROCESSING / STORAGE → ENGINE → RECOMMENDED INTERVENTION" as a visual diagram | **C** | Unchanged — the computation is real (more real than before), the input-flow diagram still doesn't exist. |
+| "Expected recovery" / "Transport cost" figures | **A** | Unchanged, now real. |
+| "Avoided spoilage: 23%" style figure | **D** | Unchanged — still no engine output for this specific comparison; the underlying saleable-fraction math (`economics.ts`) hasn't grown a baseline-vs-actual spoilage comparison. |
+| "Confidence: 87%" style numeric figure | **B** | **Moved from D.** A real, deliberately non-calibrated numeric confidence now exists and is persisted: `computeConfidence()` (`recommendationService.ts`) starts at 0.6 and is reduced for named, disclosed reasons (demand-source absence, unverified evidence tier, narrow margin) — explicitly documented in-code as *not* a calibrated ML probability, resolving the previous assessment's flagged tension in the same direction it recommended. **But it is not rendered anywhere in the UI** — `RecommendationExecutionPanel.tsx`'s props carry `recommendation.confidence`, and it is never read in that component's JSX (confirmed by reading the full file). The live-preview `RecommendationCard` still only shows the engine's own qualitative `confidenceStatus: "SIMULATION-LIMITED"`, unchanged. Data exists, is honest, isn't shown. |
 
-> **Flag — the vision's own example conflicts with an existing, deliberate design principle.** Vision Section 10 ("Realistic Data Philosophy") explicitly warns against "presenting arbitrary numbers as if they were authoritative real-world predictions" — and a fabricated 87% is exactly that. The current codebase already resolved this tension in Section 10's favor. Recommend keeping `SIMULATION-LIMITED` (or a qualitative confidence band derived honestly from margin/evidence-tier data, which *is* implementable) rather than inventing a percentage to match the vision doc's illustrative mockup literally.
+> **The old callout still applies, resolved correctly.** The previous assessment flagged that the vision's own "Confidence: 87%" example conflicts with the engine's deliberate refusal to fabricate a calibrated percentage, and recommended keeping the qualitative status or deriving something honest. What shipped is exactly that: a transparent, reason-based indicator that never claims to be a probability. The remaining gap is purely "surface the number that already exists," not "invent one."
 
 ---
 
 ## 4. Explainable Decision
 
+Unchanged from the previous assessment — already the strongest section then, still is.
+
 | Element | Category | Evidence |
 |---|---|---|
-| "Why this decision" reasoning, grounded in real inputs | **A** | `RecommendationCard.tsx:85-97` renders `decision.reasons[]`, which `buildReasons()` (`src/domain/engine/reasons.ts`) derives directly from the winner's and baseline's actual computed RUL/price/value — not templated per scenario. |
-| Full auditable decision trace (inputs → feasibility → value calc → ranking → explanation → provenance → engine version) | **A** | `DecisionTrace.tsx` is essentially a direct implementation of this vision section already — every one of the vision's six bullet points ("what did it observe / what alternatives / why did it rank highest / what outcome / what assumptions") has a corresponding `TraceSection`. |
-| Checkmark-bullet visual format ("✓ Remaining shelf life is below 5 days") | **B** | Content equivalent exists as prose reasons; not styled as a checklist. Cosmetic evolution only. |
-| "Therefore: PROCESSING > MARKET > STORAGE" ranked comparison | **A** | `DecisionTrace`'s "Ranking" section and `RankingList` already show exactly this, with rank, score, and Δ-to-winner. |
-| Explicit uncertainty/assumption disclosure | **A** | `AssumptionFlag.tsx`, `EvidenceBadge.tsx`, `ASSUMPTION_FLAG_TEXT` constants — REROUTE/STORE/PROCESS are visibly flagged `PLAUSIBLE_UNVERIFIED` everywhere they appear, never presented as field-validated. Matches vision Section 4's "what assumptions or uncertainty exist" precisely. |
-
-This is the vision section the current implementation already satisfies most completely.
+| "Why this decision" reasoning | **A** | `buildReasons()` unchanged; now also gets the D4 confidence-reduction reasons appended when a recommendation is persisted (`recommendationService.ts`'s `extraReasons`). |
+| Full auditable decision trace | **A** | `DecisionTrace.tsx` unchanged. |
+| Checkmark-bullet visual format | **B** | Unchanged. |
+| Ranked comparison | **A** | Unchanged. |
+| Explicit uncertainty/assumption disclosure | **A** | Unchanged. |
 
 ---
 
 ## 5. Operational Control Tower
 
-| Element | Category | Evidence |
-|---|---|---|
-| "Active batches" / "At risk" metrics | **A** | `KPIGrid.tsx` + `computeDashboardKpis()` (`dashboardDecisions.ts:51-60`) |
-| "Value recovered" metric | **F** | Requires comparing `outcome_record.realized_value_inr` against `recommendation.expected_recoverable_value_inr` over real executed batches. `outcome_record` has zero rows and no writer (D4 not started). A demo-only mocked version would be indistinguishable from the real metric to a viewer — building it now risks presenting fabricated recovery figures as if real, which the vision's own Section 10 explicitly warns against. |
-| "Spoilage avoided" metric | **F** | Same dependency — needs realized outcomes vs. baseline-no-intervention comparison, i.e. `outcome_record` populated by D4. |
-| Batches-needing-attention identification | **A** | `/decisions` page already filters to `DECISION_REQUIRED` / `AT_RISK` (`src/app/(ops)/decisions/page.tsx:17-19`). |
-| Geographic / route map ("HOSUR ↓ KRISHNAGIRI ↓ BENGALURU") | **C** (component) **/ E** (mock geo data) | No mapping library in `package.json` (no Mapbox/Leaflet/deck.gl), no map component anywhere. **However**: `market`, `storage_facility`, and `processing_facility` all already have `lat`/`lon` columns in the D1 schema (`src/db/schema/market.ts`, `facilities.ts`) — currently unpopulated even in demo data (`src/demo/data/markets.ts` and `facilities.ts` carry only `distanceKm`/`etaHours`, no coordinates). Plausible real TN-town coordinates could be added to the mock layer now (that's indicative geography, not fabricated business data) without needing D2/D3. The map *rendering component* itself is a genuine new build (**C**). |
-| Select a batch → inspect full intelligence | **A** | Table/list rows already route to `/batches/[id]` (`BatchTable.tsx:46-49`, `decisions/page.tsx:47-49`). |
+| Element | Category | Evidence | Moved? |
+|---|---|---|---|
+| "Active batches" / "At risk" metrics | **A** | `KPIGrid.tsx` + `computeDashboardKpis()` — now computed from `getRealBatchDashboardEntries()` (real batches), confirmed by reading `batchListService.ts`. | No (now real) |
+| "Value recovered" metric | **E** | **Moved from F.** The data this needs — `outcome_record.realized_value_inr` vs. `recommendation.expected_recoverable_value_inr` — is now real and joinable via the existing `recommendation_outcomes` view (confirmed with a live row). `computeDashboardKpis()` currently exposes only four KPIs (Active batches, At-risk batches, Potential value at risk, Recommendations issued today) — **this metric is not yet computed or added to `KPIGrid`**, confirmed by reading both files in full. With only 1 real outcome row today, the number would be thin but no longer fabricated — this is now a straightforward aggregation query plus a KPI tile, not new architecture. |
+| "Spoilage avoided" metric | **E** | **Moved from F.** Same dependency, same status: data path exists (`realized_loss_kg` on `outcome_record`), aggregation/display doesn't. |
+| Batches-needing-attention identification | **A** | `/decisions` still filters to `DECISION_REQUIRED`/`AT_RISK`, now against `getRealBatchDashboardEntries()`. |
+| Geographic / route map | **C** (component) **/ E** (real geo data) | **Data half moved from E-on-mock to E-on-real**: `market.lat`/`lon` columns still exist in schema; confirmed via `package.json` that **no mapping library has been added** (no Mapbox/Leaflet/deck.gl — unchanged). The map component itself is still a genuine new build (**C**), unchanged from before. |
+| Select a batch → inspect full intelligence | **A** | Unchanged, now routes into real data. |
 
 ---
 
 ## 6. Intervention Comparison
 
+Unchanged in kind from the previous assessment, now running on real data for real batches.
+
 | Element | Category | Evidence |
 |---|---|---|
-| Side-by-side comparison of interventions with expected value | **A** | `RankingList`/`PathwayCard` — functionally a comparison table already (rank, action, evidence, feasibility, expected recovery, cost, risk), just card-formatted rather than a literal `<table>`. If a literal table layout matters for the vision's specific mockup, that's **B** (formatting only). |
-| Recommended option visually distinguished | **A** | `RecommendationCard` is a separate, primary-bordered, sticky panel distinct from the ranked list; rank-#1 styling in `PathwayCard`. |
-| Factors: expected value, transport cost, spoilage, RUL, route feasibility, processing/storage economics, market conditions | **A** | All present across `PathwayCard`, `DecisionTrace`, `MarketPanel`. |
-| Factor: numeric confidence / evidence strength | **D** | Evidence *tier* (qualitative, VERIFIED/PLAUSIBLE_UNVERIFIED) exists and is well-surfaced (**A** for that half); numeric confidence does not, and shouldn't be fabricated — see the Section 3 callout above. |
+| Side-by-side comparison with expected value | **A** | Unchanged. |
+| Recommended option visually distinguished | **A** | Unchanged. |
+| Factors: value, cost, spoilage, RUL, feasibility, economics, market conditions | **A** | Unchanged. |
+| Factor: numeric confidence / evidence strength | **B** | **Moved from D**, same reasoning as Section 3 — evidence tier still fully surfaced (**A** half unchanged); numeric confidence now real but unrendered (**B** half, was "shouldn't be fabricated" **D**). |
 
 ---
 
 ## 7. Batch Intelligence Panel
 
-Functionally this section restates Sections 2+3+6 as one consolidated panel. The current `/batches/[id]` page already **is** this panel — `BatchHeader` + `ConditionPanel` + `LogisticsPanel` + `MarketPanel` + `DecisionEngine` + `RecommendationCard` + `DecisionTrace` together cover essentially every bullet in the vision's list (batch ID, origin, product, quantity, condition, temperature, humidity, RUL, market price, transport cost, destinations, processing/storage options, recommendation, evidence, explanation, decision trace). **A** for coverage.
+Still functionally Sections 2+3+6 combined on `/batches/[id]`, now real. **A** for coverage, unchanged.
 
-| Element | Category | Evidence |
-|---|---|---|
-| Information architecture: current state → options → recommendation → why → expected outcome | **B** | Current order is close (Header/Condition/Logistics → Market → all-candidates DecisionEngine → EventTimeline → sticky RecommendationCard-with-why) but "why" and "expected outcome" live inside the sticky recommendation rail rather than as sequential steps down the page. Reasonable existing IA; could be tightened to match the vision's exact reading order. |
-| Historical market context | **F** | Needs D2 (real price history loaded into `market_price`) — see Section 9 below. |
+| Element | Category | Evidence | Moved? |
+|---|---|---|---|
+| Information architecture ordering | **B** | Unchanged — same reasonable-but-not-exact ordering as before. | No |
+| Historical market context | **E** | **Moved from F.** `market_price` now holds 115,538 real rows spanning ~26 months for exactly this purpose. `MarketPanel.tsx` (confirmed by reading it in full) still renders only the **latest** snapshot per market in a flat table — no trend, no history, no chart. The data D2 was blocking on is fully loaded; this is now pure UI work. **Also worth flagging while in this file**: `MarketPanel` still carries a hardcoded "Indicative demo value" badge in its header, unconditionally, even when displaying a real, dated modal price (`expectedArrivalConditionNote` elsewhere correctly distinguishes "Real modal price for [date]" from "No price data available" per market — the panel's own badge doesn't reflect that distinction). Minor, but a genuine, precise inconsistency worth a look alongside the historical-context work, since both touch the same component. |
 
 ---
 
 ## 8. Decision-to-Action Experience
 
-| Element | Category | Evidence |
-|---|---|---|
-| "RECOMMENDED ACTION" statement | **A** | `RecommendationCard.tsx:41-43` |
-| Destination, ETA, transport cost, expected recovered value, confidence | **A/D mix** | All present except numeric confidence (same flag as Section 3). |
-| Expected arrival condition | **B** | Exists at the market level (`MarketPanel`'s "Expected arrival condition" column, currently a fixed indicative note string, not batch-specific) — could be tightened but the field exists. |
-| Expected avoided loss | **E** | Same derivation as Section 2's "projected loss" — computable now from existing baseline/candidate values, not currently surfaced as a named field. |
-| Clear, actionable "what should the operator do next" | **B** | Currently a static disclaimer sentence ("Operator reviews and executes. FreshRoute does not execute pathways automatically.") — informative but not an actionable control. |
-| **Accept / Execute / Override controls that actually record what happened** | **F** | This is precisely D4's scope. `action_execution` (who executed what, when) exists as an empty table with no writer. Building interactive controls now that don't persist anywhere would be UI theater — STAGE0.md's D4 session is explicitly this: "Accept / Reject / Override controls on the recommendation card... Writes action_execution." |
+| Element | Category | Evidence | Moved? |
+|---|---|---|---|
+| "RECOMMENDED ACTION" statement | **A** | Unchanged. | No |
+| Destination, ETA, transport cost, expected recovered value | **A** | Unchanged. | No |
+| Decision confidence | **B** | Same as Section 3 — real, persisted, not rendered. | Moved from D |
+| Expected arrival condition | **B** | Unchanged — still a fixed indicative note string per market, not batch-specific. | No |
+| Expected avoided loss | **E** | Unchanged in status — still derivable, still not a named field; now the derivation would draw on real rather than demo baseline values. | No |
+| Clear, actionable "what should the operator do next" | **A** | **Moved from B.** This is now a genuinely actionable control, not a static disclaimer sentence: `RecommendationExecutionPanel.tsx` renders live Accept / Reject / Override buttons wired to real server actions (`outcomeActions.ts`), each of which writes a real row and is reflected immediately (`router.refresh()`). Confirmed by reading the full component and its button handlers. |
+| **Accept / Execute / Override controls that actually record what happened** | **A** | **Moved from F — this is the single largest category shift in this reassessment.** D4's own scope, verbatim from `STAGE0.md`, is now built and exercised: `action_execution` has 2 real rows, `recommendation.status` cycles through ISSUED → ACCEPTED/REJECTED/OVERRIDDEN, and the Override flow requires naming what was actually executed from `action_type` before it will submit (confirmed in the component's form). Not a mockup — a real, working control surface. |
 
 ---
 
 ## 9. Data and Intelligence Architecture
 
-| Intelligence category | Element | Category | Notes |
-|---|---|---|---|
-| Batch | condition, quality, quantity, shelf life, RUL, telemetry | **A** (demo) | Modeled in `domain/types/models.ts` (`Batch`, `Telemetry`) and now in the D1 DB schema (`batch`, `batch_telemetry`, `condition_assessment`) — not yet wired together (D3). |
-| Market | current/destination prices | **A** (demo) / **F** (real) | Demo prices are scenario-driven synthetic values (`buildContext.ts:27-42`). Real prices exist in `data/validation/normalized/tomato_tn.csv` (126,578 measured rows from D0) but **zero rows are in the database** — D2 hasn't loaded them. |
-| Market | historical price context | **F** | Same — needs D2. The raw material is unusually good here (D0 measured ~26 months of dense daily TN tomato history), it's just not loaded yet. |
-| Market | demand signals | **F, with a permanent caveat** | Demo `DemandSignal` (WEAK/MODERATE/STRONG) is scenario-controlled synthetic data today. The real path is not just "not started" — D0 found arrivals **absent at every source attempted** (`data/validation/source_attempts.json`), so `demand_source` defaults to `ABSENT` in the schema by design (`docs/data/schema-implications.md`, finding #1). A real demand signal may never arrive without a fundamentally different data source; the engine and UI should keep treating "no demand signal" as the normal case, not a temporary gap. |
-| Logistics | route distance, transport cost, ETA, constraints | **A** (demo) / **D** (real) | Demo `Market`/`Facility` types carry these fields already; no real routing/logistics integration exists or is scheduled in STAGE0. |
-| Storage | availability, cost, shelf-life extension | **A** (demo) / **D** (real) | `storage_facility` exists in both the demo layer and the D1 DB schema; no real storage-network integration. |
-| Processing | availability, capacity, economics | **A** (demo) / **D** (real) | Same pattern as storage. |
-| Decision | candidates, ranking, expected value/loss, confidence, evidence, trace | **A** | The most complete category — see Sections 3–4. |
+| Intelligence category | Element | Category | Notes | Moved? |
+|---|---|---|---|---|
+| Batch | condition, quality, quantity, shelf life, RUL, telemetry | **A** | Now wired end to end — `batch`, `batch_telemetry`, `condition_assessment` all have real rows, read through `buildRealBatchBaseline`. | Moved from "A (demo)" — now real |
+| Market | current/destination prices | **A** | 115,538 real rows, read live via `getLatestMarketPrice`. | Moved from F (real) |
+| Market | historical price context | **E** | See Section 7 — data loaded, UI doesn't surface it yet. | Moved from F |
+| Market | demand signals | **F, permanent, unchanged** | Re-confirmed by direct query: **100% of `market_price` rows** (115,538 / 115,538) carry `demand_source = 'ABSENT'`. This is the one item in this whole document that is still exactly where the previous assessment left it, correctly — a real data-source absence, not a sequencing gap. Treat "no demand signal" as the permanent normal case, not a temporary one. |
+| Logistics | route distance, transport cost, ETA, constraints | **A** (indicative) **/ F** (real) | Unchanged — `lane` table exists, real routing data still hasn't been sourced. Reclassified from D to F in this pass — see the D-vs-F note below the table. |
+| Storage | availability, cost, shelf-life extension | **A** (existence, honestly gated) **/ F** (economics) | **Refined, not simply moved.** 143 real, source-cited facility rows now exist (up from 0) — a genuine partial advance over the old assessment's "0 rows" finding — but every economics column is NULL, and (confirmed this session) a type-predicate fix correctly excludes these rows from `evaluateDecision()` rather than pricing them at zero. STORE is real, honestly infeasible, and correctly explained as such (`"No cold-store facility is configured for this batch."`) rather than either fabricated or silently broken. The remaining gap is sourcing real tariffs — external data acquisition, not a coding task — hence **F**, not D. |
+| Processing | availability, capacity, economics | **A** (existence, honestly gated) **/ F** (economics) | Same pattern — 4 real rows, same fix in place, same honest infeasibility, same F reclassification. |
+| Decision | candidates, ranking, expected value/loss, confidence, evidence, trace | **A** | Unchanged as the most complete category — now backed by real data and a real persistence/execution/outcome loop on top. |
+
+> **A note on D vs. F in this revision.** The previous assessment used D for "backend/engine work not started" broadly, covering both "a new formula needs to be written" and "real-world data needs to be sourced from somewhere" — a distinction that didn't matter much while D2–D4 themselves were the biggest pending backend work. Now that they're done, lumping those two together would hide a real difference: **D** here means *new computation this codebase's own team can write* (e.g., "Avoided spoilage %" above — the math is derivable from data already in hand); **F** means *blocked on acquiring a real-world data source this codebase cannot manufacture* (facility tariffs, real routing distances, live integrations) — the same category demand signals were already correctly in. Storage/processing economics and real logistics data move from D to F under this tightened definition; nothing about their actual status changed, only which bucket honestly describes what's missing.
 
 ---
 
 ## 10. Realistic Data Philosophy
 
+Unchanged as a *principle*, and now tested under real conditions rather than only against demo data — it held.
+
 | Element | Category | Evidence |
 |---|---|---|
-| Structured mock data with realistic relationships | **A** | Demo batches/markets/facilities are internally consistent (e.g. `MARKET_BASE_PRICE_PER_KG` keyed to real market IDs, commodity-filtered market pools). |
-| Replaceable data layer | **A** | See Section 3's architecture note — `demo/data` and `demo/scenarios` are the only places mock data lives; nothing is hard-coded inside components or the engine. |
-| Business logic not hard-coded into visual components | **A** | Confirmed while reading every component: components format and render engine output, they don't compute it. |
-| Calculations eventually sourced from the real decision engine | **A** | Already true today — the "mock" part is the *inputs* (telemetry, prices), not the *calculations*, which already run through the real `evaluateDecision()`. |
-| Never implying production-grade prediction where it doesn't exist | **A** | `DemoBanner` ("Demo Mode... Synthetic telemetry · indicative market values"), `ProvenanceBadge` ("Synthetic"), `dataProvenance: "SYNTHETIC"` on every demo entity, `confidenceStatus: "SIMULATION-LIMITED"` — this is enforced pervasively, not just declared. |
-
-This section is, alongside Section 4, where the existing implementation already matches the vision most exactly — worth calling out explicitly since it's easy to assume "mock data" work is a gap when here it's a genuine strength to preserve.
+| Structured mock data with realistic relationships | **A** | Unchanged for the demo layer; the real layer inherits the same discipline. |
+| Replaceable data layer | **A** | **Validated, not just claimed** — see Section 3. The swap actually happened without an engine or component rewrite. |
+| Business logic not hard-coded into visual components | **A** | Re-confirmed while reading every component touched this session. |
+| Calculations eventually sourced from the real decision engine | **A** | Was already true; now the *inputs* are real too, not just the calculations. |
+| Never implying production-grade prediction where it doesn't exist | **A** | `DemoBanner.tsx`'s copy has itself been kept honestly current — it now reads "Real market prices (market_price) · manually entered telemetry · indicative logistics & facilities," correctly distinguishing what's real from what isn't rather than blanket-labeling everything synthetic. This is exactly the discipline Section 10 asks for, caught actively maintaining itself through a real data transition — worth naming as a positive finding, not just a box to check. |
 
 ---
 
 ## 11. Animation and Interaction Philosophy
 
+No frontend work here since the previous assessment — unchanged.
+
 | Element | Category | Evidence |
 |---|---|---|
-| Motion for decision computation / value changes / list reordering | **A** | `RankingList` uses `motion.div layout` for reordering (`RankingList.tsx:17`); `RecommendationCard` animates value changes with `AnimatePresence` (`RecommendationCard.tsx:33-44, 183-196`); `EventTimeline` staggers entrance. |
-| Non-decorative, functional animation | **A** | All existing motion ties to a real state change (a new winner, a new value, a reordered rank) — none of it is idle/ambient decoration. |
-| Motion for batch movement / route selection / deterioration over time | **C** | No literal batch-journey or route animation exists anywhere. |
-| "Responsive, deliberate, premium, calm, intelligent, operational" feel | **B** | Current interaction feels calm/operational already (consistent with the avoid-list in the Product Experience section); "premium/cinematic" ambition is not yet reached — same gap as the landing page. |
-
----
+| Motion for decision computation / value changes / list reordering | **A** | Unchanged. |
+| Non-decorative, functional animation | **A** | Unchanged. |
+| Motion for batch movement / route selection / deterioration over time | **C** | Unchanged. |
+| "Responsive, deliberate, premium, calm, intelligent, operational" feel | **B** | Unchanged. |
 
 ## 12. Visual Hierarchy
 
-The vision's ordering (batch state → economic risk → options → recommendation → why → next step) is **B**: broadly present on `/batches/[id]` already, but **economic risk isn't yet a distinct, prominent first-class element on the batch page itself** — "potential value at risk" currently only exists as a fleet-level KPI on the dashboard (`KPIGrid`), not foregrounded per-batch the way the vision's ordering implies it should be (second, right after batch state).
+**B**, unchanged — economic risk still isn't a distinct, prominent first-class element on the batch page itself (it's stronger now, in `BatchHeader`'s Economics column, but still not foregrounded the way the vision's second-priority ordering implies).
 
 ## 13. Product Personality
 
-Qualitative. **B** overall — the restraint half of this (not looking like a generic AI dashboard, avoiding agriculture-website or fintech-dashboard clichés) is already achieved by what's *absent* from the codebase (no gradients/glow/glass, confirmed by reading every component). The ambition half (cinematic, premium, command-center) is not yet reached. No code contradicts the vision here; it simply hasn't been built out yet.
+**B**, unchanged — same restraint-achieved / ambition-not-yet-reached split as before. No code contradicts the vision; the cinematic/premium half simply hasn't been built.
 
 ## 14. Long-Term Product Direction
 
-| Element | Category | Evidence |
-|---|---|---|
-| Multi-crop support | **A** (architecture) | The engine and type system are already commodity-agnostic — the demo roster spans Tomato/Banana/Mango/Onion/Leafy Greens today (`src/demo/data/batches.ts`) and the engine makes no tomato-specific assumptions. |
-| Multi-crop support, real data | **D** | D0/D1's real pipeline is TN-tomato-only by explicit STAGE0 scope; extending to other commodities is new data work, not an engine limitation. |
-| Real-time telemetry, live market intel, logistics/processor/storage integrations | **D** | None started; out of STAGE0's current scope entirely. |
-| Historical outcome learning, recommendation performance tracking, intervention success rates, recovered-value/spoilage-reduction analytics | **F** | This entire bullet list is the direct product of `outcome_record` + `action_execution` data accumulating after D4 ships. The vision's own worked example — "Recommendation → Processing, Expected ₹31,260, Actual ₹30,840, Outcome: Successful" — is literally the `outcome_record` row shape already defined in the D1 schema (`realized_value_inr`, `actual_destination`, etc.), just with zero rows in it. |
+| Element | Category | Evidence | Moved? |
+|---|---|---|---|
+| Multi-crop support (architecture) | **A** | Unchanged — engine and types remain commodity-agnostic. | No |
+| Multi-crop support (real data) | **F** | Unchanged in substance — D0–D4's real pipeline is still TN-tomato-only by explicit scope; reclassified from D to F (external data sourcing for other crops, not new code, per the note in Section 9). | No |
+| Real-time telemetry, live market intel, logistics/processor/storage integrations | **F** | Unchanged in substance — none of these are live-streaming; telemetry is manually entered (`TelemetryForm`), prices are a nightly-style loaded table, not a live feed. Reclassified from D to F — these are external integrations to acquire, not computation to write. | No |
+| Historical outcome learning, recommendation performance tracking, intervention success rates, recovered-value analytics | **E** | **Moved from F.** The prerequisite data now exists and is queryable in one view (`recommendation_outcomes`) — confirmed with a real row. What's missing is an aggregation/analytics UI (success rate, average expected-vs-actual delta across the outcome set) — a real but small build against real data, not a new capability to invent. With 1 outcome row today the numbers would be thin, which is honest, not a blocker. |
+| "Recommendation → Processing, Expected ₹31,260, Actual ₹30,840, Outcome: Successful" worked example | **A** | **Moved from F — the clearest single confirmation in this document.** This is no longer a hypothetical schema shape. A real row exists: Recommendation → SELL, Expected ₹50,265.83, Actual ₹48,900.50 (realized 42.30 kg loss, a named actual destination), reachable today via the `recommendation_outcomes` view or the CSV export. Different action, different numbers, same real mechanism the vision describes. |
 
 ## 15. Design Principle ("Show the intelligence, not just the interface")
 
-**A.** This is already the codebase's operating principle in practice, not just aspiration — see Sections 3, 4, and 10. `DecisionTrace` alone answers five of the vision's own seven framing questions ("what happened / what alternatives / what does it recommend / why / how much value") on demand, without any new work.
+**A**, unchanged and now stronger — `DecisionTrace` still answers the vision's framing questions on demand, and the outcome loop now closes the last one ("what should I do now?" → an actual, persisted, re-visitable answer) that was previously only architecturally implied.
 
 ## 16. Implementation Direction ("evolve, don't rebuild")
 
-Not a UI feature to categorize — a constraint on how to act on the rest of this document. Confirmed feasible: `src/domain/engine` is genuinely framework-free (no DB/HTTP imports anywhere in it — verified by reading every file in `src/domain/engine/`), and the D1 database schema was designed around it rather than the other way around (`docs/data/schema-notes.md`'s "engine stays framework-free" principle). Nothing here needs a rebuild; the engine, types, and D1 schema are the foundation to build the vision's UI on top of, not around.
+Unchanged as a constraint, and now validated as a result: `src/domain/engine` remains genuinely framework-free (re-confirmed: the only change made to it since the previous assessment was one small, additive, pure function — `computeQ10RateMultiplier` — no DB/HTTP import was introduced), and D2/D3/D4 were built entirely as new adapters/repositories/services around it rather than by touching it. The evolve-don't-rebuild bet paid off exactly as the previous assessment predicted.
 
 ## 17. Core Experience Summary
 
-Restates the whole narrative as one spine: **DATA → INTELLIGENCE → DECISION → EXPLANATION → ACTION → OUTCOME**. Breaking that spine down by what's real today:
+Re-scored against the same spine — **DATA → INTELLIGENCE → DECISION → EXPLANATION → ACTION → OUTCOME**:
 
-- **DATA**: real for D0's TN tomato measurement (`data/validation/`), real-but-unloaded for the running app (D2 pending), synthetic for everything else (by design, disclosed).
-- **INTELLIGENCE → DECISION → EXPLANATION**: real today, already matches the vision closely (Sections 3–4, 10, 15).
-- **ACTION → OUTCOME**: not real yet, and structurally can't be until D4 — this is the one part of the spine that is **F**, not just unbuilt UI.
+- **DATA**: real for D0's measurement, **now also real for the running app** (D2 loaded). Only demand signals remain permanently synthetic-by-necessity.
+- **INTELLIGENCE → DECISION → EXPLANATION**: real, unchanged, still the strongest part of the product.
+- **ACTION**: **now real** — Accept/Reject/Override genuinely execute and persist.
+- **OUTCOME**: **now real, thin** — one genuine outcome row exists end-to-end; the loop closes, the volume is just still small.
+
+The entire spine is now real, if not yet deep everywhere. The previous assessment's one structurally-blocked segment (ACTION → OUTCOME, "can't be built until D4") is the segment that moved the most.
 
 ---
 
-## Everything gated on D2/D3/D4 (recommendation_candidate / outcome_record), collected
+## Every formerly-F item, resolved explicitly
 
-Per the explicit ask — every element above marked **F**, in one place:
+Per the task's ask — every element the previous assessment marked **F**, and exactly what happened to it:
 
-| Vision element | Blocked on | Why |
-|---|---|---|
-| "Value recovered" KPI (Section 5) | D4 (`outcome_record`) | No realized-value data exists to sum. |
-| "Spoilage avoided" KPI (Section 5) | D4 (`outcome_record`) | Needs realized outcome vs. baseline comparison. |
-| Historical market context (Sections 7, 9) | D2 (`market_price` load) | Table exists, 0 rows. |
-| Real demand signals (Section 9) | D0 finding, not just D2 | Arrivals data confirmed absent at every source tried — may be a permanent constraint, not a queue position. |
-| Accept/Execute/Override controls (Section 8) | D4 (`action_execution`) | STAGE0.md's D4 scope, verbatim: "Writes action_execution." |
-| Outcome learning / performance tracking / success-rate analytics (Section 14) | D4 (`outcome_record`) | Zero rows, no writer, nothing to learn from yet. |
-| "Actual recovery ₹30,840 / Outcome: Successful" worked example (Section 14) | D4 (`outcome_record`) | This is a literal `outcome_record` row; schema exists, table is empty. |
-| Persisted, queryable candidate/decision history across time (implied by Sections 4, 6, 9's "decision intelligence") | D3 (`recommendation`, `recommendation_candidate`) | Candidates are correctly computed live today (framework-free engine, recomputed per render) — that's real and fine for a single current view, but there is no persisted history to audit or backtest against yet. `recommendation_candidate` exists specifically as "the future backtest/training set" per `docs/data/schema-notes.md` and currently has 0 rows. |
-| "Expected arrival condition" as a genuinely batch-specific, computed figure (Section 8) | D3 (context builder reading real telemetry) | Currently a fixed indicative string in demo data, not computed per batch. |
+| Vision element | Was blocked on | Now | Why |
+|---|---|---|---|
+| "Value recovered" KPI (Section 5) | D4 | **E** | `outcome_record`/`recommendation_outcomes` now real and queryable; `KPIGrid`/`computeDashboardKpis` confirmed to not yet compute it — pure aggregation + tile work remains. |
+| "Spoilage avoided" KPI (Section 5) | D4 | **E** | Same — `realized_loss_kg` is real; not yet aggregated or displayed. |
+| Historical market context (Sections 7, 9) | D2 | **E** | 115,538 real rows loaded; `MarketPanel` confirmed to still show only the latest snapshot, no trend. |
+| Real demand signals (Section 9) | D0 finding, not a queue position | **F, unchanged, correctly** | Re-confirmed 100% `ABSENT` across all 115,538 rows. Still a genuine, likely-permanent data-source absence — the one item that should stay F. |
+| Accept/Execute/Override controls (Section 8) | D4 | **A** | Built, wired, exercised with real rows (`action_execution` has 2). The largest single move in this reassessment. |
+| Outcome learning / performance tracking / success-rate analytics (Section 14) | D4 | **E** | Data path real and joined (`recommendation_outcomes`); an aggregate analytics view over it doesn't exist yet — thin data (1 outcome), honest to report as such. |
+| "Actual recovery ₹30,840 / Outcome: Successful" worked example (Section 14) | D4 | **A** | This is now a literal, real `recommendation_outcomes` row — not the same numbers, but the same mechanism, for real. |
+| Persisted, queryable candidate/decision history (Sections 4, 6, 9) | D3 | **A** | `recommendation_candidate` has 30 real rows (5 recommendations × 6 candidates); no longer just live-recomputed-per-render with nothing durable behind it. |
+| "Expected arrival condition" as a batch-specific, computed figure (Section 8) | D3 | **B** | Context builder now reads real telemetry (D3 done), but `expectedArrivalConditionNote` is still a fixed indicative string per market in `buildRealDecisionContext.ts`, not computed per batch. Moved from fully-blocked to a scoped UI/logic task. |
 
-Nothing above should be built to *look* real before D3/D4 land — per the vision's own Section 10, that would be presenting a number as authoritative when it isn't.
+**Several items remain genuinely F under the tightened D-vs-F definition above — none blocked by sequencing, all blocked by a real-world data source this codebase cannot manufacture:**
+
+1. **Real demand signals** — a confirmed, structural data-source absence (Section 9): 100% `ABSENT` across all 115,538 `market_price` rows, not a pending task.
+2. **STORE/PROCESS real economics** (Sections 3, 6, 9) — real facility *existence* is now known (**143** storage + 4 processing rows, source-cited, direct-queried for this assessment — not the 147 the task brief cited; noting the discrepancy rather than silently adopting it), but real *tariffs* have never been sourced, and nothing in this codebase can manufacture them honestly.
+3. **Real logistics/routing data** (Section 9) — the `lane` table exists; every distance/ETA/cost figure in the running app is still the same indicative placeholder.
+4. **Real-time telemetry, live market intelligence, logistics/processor/storage integrations** (Section 14) — telemetry is manually entered, prices load in batch, nothing streams.
+5. **Multi-crop real data** (Section 14) — the engine and schema are commodity-agnostic already; every real row in the database is still tomato-only.
+
+Compare this list with the previous assessment's nine F items: three of those (Value recovered, Spoilage avoided, Accept/Execute/Override — the ones actually gated on D4) are gone, resolved by real work landing. What's left is a shorter, more honest list of genuine external-data dependencies, not a queue.
