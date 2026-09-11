@@ -11,7 +11,7 @@ import { formatHours } from "@/lib/formatting/number";
 
 /** Section 11 — live condition readings: temperature, humidity, thermal exposure, condition, RUL, with trend + deltas. */
 export function ConditionPanel({ data }: { data: BatchViewData }) {
-  const { batch, currentRemainingUsefulLifeHours } = data;
+  const { batch, currentRemainingUsefulLifeHours, qualityScore } = data;
   const { telemetry } = batch;
   const trend = buildTemperatureTrend(telemetry.temperatureC);
   const thermalPenaltyHours = telemetry.thermalExposureHours * THERMAL_PENALTY_HOURS_PER_EXPOSURE_HOUR;
@@ -20,9 +20,20 @@ export function ConditionPanel({ data }: { data: BatchViewData }) {
     <div className="flex flex-col gap-4 rounded-lg border border-border bg-card p-4">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold tracking-tight">Condition</h2>
-        <StatusPill tone={CONDITION_TONE[batch.condition]} className="capitalize">
-          {batch.condition.toLowerCase()}
-        </StatusPill>
+        <div className="flex items-center gap-2">
+          {/* The batch's own last-recorded quality_score (condition_assessment) —
+              not scenario-reactive, unlike the pill beside it: this is a
+              recorded fact about the batch, same as currentPlanAction staying
+              fixed while a scenario override explores a hypothetical. See
+              RealBatchBaseline.qualityScore for why the two can, in principle,
+              diverge once a scenario condition override is active. */}
+          <span className="font-mono text-sm font-semibold tabular-nums text-foreground" title="Last recorded quality score">
+            {Math.round(qualityScore)}%
+          </span>
+          <StatusPill tone={CONDITION_TONE[batch.condition]} className="capitalize">
+            {batch.condition.toLowerCase()}
+          </StatusPill>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
