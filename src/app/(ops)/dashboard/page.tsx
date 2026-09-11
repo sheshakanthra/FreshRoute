@@ -1,11 +1,16 @@
+// Live-database-backed page: never statically prerendered at build time.
+export const dynamic = "force-dynamic";
+
 import { BatchTable } from "@/components/batch/BatchTable";
 import { DemoBanner } from "@/components/shell/DemoBanner";
 import { KPIGrid } from "@/components/shared/KPIGrid";
-import { computeDashboardKpis, getBatchDashboardEntries } from "@/demo/scenarios/dashboardDecisions";
+import { computeDashboardKpis, computeOutcomeKpis, getRealBatchDashboardEntries } from "@/server/services/batchListService";
+import { listRecommendationOutcomes } from "@/server/repositories/recommendationOutcomes";
 
-export default function DashboardPage() {
-  const entries = getBatchDashboardEntries();
+export default async function DashboardPage() {
+  const [entries, outcomeRows] = await Promise.all([getRealBatchDashboardEntries(), listRecommendationOutcomes()]);
   const kpis = computeDashboardKpis(entries);
+  const outcomeKpis = computeOutcomeKpis(outcomeRows);
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -18,7 +23,7 @@ export default function DashboardPage() {
 
       <DemoBanner />
 
-      <KPIGrid kpis={kpis} />
+      <KPIGrid kpis={kpis} outcomeKpis={outcomeKpis} />
 
       <div className="flex flex-col gap-3">
         <h2 className="text-sm font-semibold tracking-tight text-foreground">Active batches</h2>
