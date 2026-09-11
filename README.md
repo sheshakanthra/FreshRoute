@@ -1,5 +1,4 @@
 
-```markdown
 <div align="center">
 
 # 🍅 FRESHROUTE
@@ -17,10 +16,6 @@
 [![Evidence](https://img.shields.io/badge/evidence-provenance--aware-green?style=flat-square)]()
 
 <br/>
-
-**[Live Product](https://d-freshroute.vercel.app)**
-
-Built for **Build with Bharat 2.0 · National Institute of Technology, Delhi**
 
 </div>
 
@@ -1001,11 +996,6 @@ The system is currently positioned as a **research-grade, decision-support proto
 
 ---
 
-## `27` — Built With Bharat
-
-FreshRoute was developed as part of **Build with Bharat 2.0** at **National Institute of Technology, Delhi**.
-
-The project focuses on applying engineering, decision systems, data, and AI to a practical post-harvest problem in Indian agricultural supply chains.
 
 ### Initial focus
 
@@ -1035,7 +1025,6 @@ Processors
 
 **FreshRoute — Value Recovery Decision Layer**
 
-https://d-freshroute.vercel.app
 
 The live demo demonstrates the operational decision workflow:
 
