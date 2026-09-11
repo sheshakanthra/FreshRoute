@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, numeric, integer } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, numeric, integer, boolean, date } from "drizzle-orm/pg-core";
 import { market } from "./market";
 import { laneModeEnum } from "./enums";
 
@@ -24,6 +24,21 @@ export const storageFacility = pgTable("storage_facility", {
   costPerKgPerDay: numeric("cost_per_kg_per_day", { precision: 8, scale: 4 }),
   capacityKg: numeric("capacity_kg", { precision: 12, scale: 2 }),
   maxStorageDays: integer("max_storage_days"),
+  /* Provenance — D5. A facility name with no citation is not a usable
+   * record, so every row carries the directory it came from, that
+   * directory's URL, and the date it was actually fetched. Rows are only
+   * inserted when they were confirmed against a primary government
+   * directory; unconfirmed leads live in docs/facilities/unverified-leads.md
+   * and are deliberately kept out of these tables. in_covered_district flags
+   * whether the facility's district is one we hold market_price data for —
+   * NULL means the source's district field was rejected as unreliable and
+   * no district could be established without guessing. */
+  district: text("district"),
+  sourceName: text("source_name"),
+  sourceUrl: text("source_url"),
+  sourceAccessedOn: date("source_accessed_on"),
+  verificationNote: text("verification_note"),
+  inCoveredDistrict: boolean("in_covered_district"),
 });
 
 /** Reference table — same reasoning as storage_facility. */
@@ -37,4 +52,19 @@ export const processingFacility = pgTable("processing_facility", {
   minQualityScore: numeric("min_quality_score", { precision: 5, scale: 2 }),
   dailyCapacityKg: numeric("daily_capacity_kg", { precision: 12, scale: 2 }),
   productForm: text("product_form"),
+  /* Provenance — D5. A facility name with no citation is not a usable
+   * record, so every row carries the directory it came from, that
+   * directory's URL, and the date it was actually fetched. Rows are only
+   * inserted when they were confirmed against a primary government
+   * directory; unconfirmed leads live in docs/facilities/unverified-leads.md
+   * and are deliberately kept out of these tables. in_covered_district flags
+   * whether the facility's district is one we hold market_price data for —
+   * NULL means the source's district field was rejected as unreliable and
+   * no district could be established without guessing. */
+  district: text("district"),
+  sourceName: text("source_name"),
+  sourceUrl: text("source_url"),
+  sourceAccessedOn: date("source_accessed_on"),
+  verificationNote: text("verification_note"),
+  inCoveredDistrict: boolean("in_covered_district"),
 });
