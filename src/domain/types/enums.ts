@@ -40,8 +40,13 @@ export type MarginStatus = "CLEAR" | "NARROW" | "NO_FEASIBLE_PATHWAY";
 /** Section 35 — confidence is never a calibrated percentage. */
 export type ConfidenceStatus = "SIMULATION-LIMITED";
 
-/** Section 36 — every demo dataset carries this provenance marker. */
-export type DataProvenance = "SYNTHETIC";
+/** Section 36 — every demo dataset carries this provenance marker.
+ * "REAL" added for D3: a value sourced from the live database (a real batch
+ * row, a real telemetry reading, a real market_price row). Logistics/facility
+ * fields on an otherwise-REAL entity may still be "SYNTHETIC" where no real
+ * source exists yet (see src/server/context) — provenance is per-field, this
+ * type just names the two possible values a field can carry. */
+export type DataProvenance = "SYNTHETIC" | "REAL";
 
 /** Section 36 — source type accompanying dataProvenance. */
 export type SourceType = "DEMO_SCENARIO";

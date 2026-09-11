@@ -20,7 +20,12 @@ export const recommendation = pgTable("recommendation", {
   orgId: uuid("org_id").notNull().references(() => organization.id, { onDelete: "restrict" }),
   generatedAt: timestamp("generated_at", { withTimezone: true }).notNull().defaultNow(),
   validUntil: timestamp("valid_until", { withTimezone: true }).notNull(),
-  chosenActionCode: text("chosen_action_code").notNull().references(() => actionType.code, { onDelete: "restrict" }),
+  // Nullable — added in D3. The engine's own no-feasible-pathway safe state
+  // (RecommendationCard's NoFeasiblePathwayCard) has no winning action to
+  // record; that state is a real, designed outcome (STAGE0: the
+  // NO_FEASIBLE_PATHWAY margin status), not an error, and this table must
+  // be able to persist it rather than silently dropping it.
+  chosenActionCode: text("chosen_action_code").references(() => actionType.code, { onDelete: "restrict" }),
   destinationRef: text("destination_ref"),
   expectedRecoverableValueInr: numeric("expected_recoverable_value_inr", { precision: 12, scale: 2 }).notNull(),
   baselineValueInr: numeric("baseline_value_inr", { precision: 12, scale: 2 }).notNull(),
