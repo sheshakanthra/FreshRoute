@@ -1,0 +1,2 @@
+ALTER TABLE "batch" ADD COLUMN "planned_market_id" uuid;--> statement-breakpoint
+ALTER TABLE "batch" ADD CONSTRAINT "batch_planned_market_id_market_id_fk" FOREIGN KEY ("planned_market_id") REFERENCES "public"."market"("id") ON DELETE restrict ON UPDATE no action;

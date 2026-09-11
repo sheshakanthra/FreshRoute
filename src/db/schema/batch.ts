@@ -2,6 +2,7 @@ import { pgTable, uuid, text, numeric, boolean, timestamp, jsonb, index } from "
 import { sql } from "drizzle-orm";
 import { organization } from "./organization";
 import { commodity } from "./commodity";
+import { market } from "./market";
 import { batchStatusEnum, telemetryDataSourceEnum } from "./enums";
 
 /**
@@ -9,11 +10,20 @@ import { batchStatusEnum, telemetryDataSourceEnum } from "./enums";
  * remaining_useful_life_hours — those are model outputs and live in
  * condition_assessment. A batch row must never claim to know its own
  * remaining life (STAGE0 schema principle; see schema-notes.md).
+ *
+ * planned_market_id — added in D3 (persistence swap). Missed in the original
+ * D1 migration: STAGE0's batch spec never named it, but the decision engine's
+ * SELL/DISCOUNT pathways (the two VERIFIED, primary pathways) hard-require a
+ * planned market to evaluate against (see domain/engine/evaluators.ts,
+ * findPlannedMarket()) — without this column no real batch could ever be
+ * evaluated. Nullable because a batch can in principle exist before a market
+ * is assigned, but the batch-creation form always sets it.
  */
 export const batch = pgTable("batch", {
   id: uuid("id").primaryKey().defaultRandom(),
   orgId: uuid("org_id").notNull().references(() => organization.id, { onDelete: "restrict" }),
   commodityId: uuid("commodity_id").notNull().references(() => commodity.id, { onDelete: "restrict" }),
+  plannedMarketId: uuid("planned_market_id").references(() => market.id, { onDelete: "restrict" }),
   externalRef: text("external_ref"),
   quantityKg: numeric("quantity_kg", { precision: 10, scale: 2 }).notNull(),
   variety: text("variety"),
