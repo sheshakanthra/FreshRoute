@@ -88,10 +88,13 @@ export function PathwayCard({ candidate }: { candidate: RankedAction }) {
         <div className="ml-auto flex items-center gap-4">
           <Figure label="Expected recovery" value={formatIndicativeInr(candidate.expectedRecovery)} muted={!isFeasible} />
           <Figure label="Cost" value={formatIndicativeInr(candidate.cost)} muted={!isFeasible} />
-          {/* Risk level is moot on a pathway that cannot be taken, so an
-              infeasible row shows it without the tone colouring. The label
-              text is unchanged either way. */}
-          <StatusPill tone={isFeasible ? RISK_TONE[candidate.riskLevel] : "neutral"}>{candidate.riskLevel}</StatusPill>
+          {/* Risk level is moot on a pathway that cannot execute — showing
+              e.g. "LOW" on an infeasible row reads as an assessed risk
+              rating, which it isn't. Neutral "—" for infeasible rows;
+              engine output (candidate.riskLevel) is untouched either way. */}
+          <StatusPill tone={isFeasible ? RISK_TONE[candidate.riskLevel] : "neutral"}>
+            {isFeasible ? candidate.riskLevel : "—"}
+          </StatusPill>
         </div>
       </div>
 

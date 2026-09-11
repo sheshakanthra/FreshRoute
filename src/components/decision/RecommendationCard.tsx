@@ -182,11 +182,19 @@ function NoFeasiblePathwayCard({ data }: { data: BatchViewData }) {
         <MiniField label="Baseline (current plan)" value={formatIndicativeInr(decision.baselineValue)} />
       </div>
 
+      {/* demandSignal here is never an observed value for a real batch — see
+          buildRealDecisionContext.ts: MODERATE is a neutral pricing default
+          (multiplier 1.0), not sourced from data.gov.in, which has no
+          arrivals/demand column at all (market_price.demand_source is
+          always ABSENT). Displaying it as "moderate" would read as an
+          observed market fact, so this field states plainly that no demand
+          data exists rather than surfacing that default. The real,
+          provenance-carrying price is unchanged. */}
       <MiniField
         label="Last known market state"
         value={
           plannedSnapshot
-            ? `${formatIndicativeInr(plannedSnapshot.pricePerKg)}/kg, ${plannedSnapshot.demandSignal.toLowerCase()}`
+            ? `${formatIndicativeInr(plannedSnapshot.pricePerKg)}/kg — no demand data available`
             : "—"
         }
       />
