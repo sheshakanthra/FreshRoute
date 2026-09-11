@@ -1059,16 +1059,9 @@ Outcome
 **The question is not only what the batch is worth.  
 It is what the batch can still become.**
 
-Built for **Build with Bharat 2.0 · National Institute of Technology, Delhi**
 
 </div>
-```
 
-### One change I'd make before you push this
-
-Your GitHub **About description** should be much shorter than the README:
-
-> **AI-powered perishable value recovery engine that evaluates six recovery pathways and recommends the highest-value feasible action for a batch based on condition, market, logistics, and remaining useful life.**
 
 And the website field should be:
 
