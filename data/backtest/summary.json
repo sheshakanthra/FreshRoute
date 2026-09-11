@@ -1,0 +1,37 @@
+{
+  "generatedAt": "2026-09-10T08:57:31.349Z",
+  "window": {
+    "start": "2024-07-16",
+    "end": "2026-09-08",
+    "totalDaysInSpan": 785,
+    "evaluatedDays": 785,
+    "skippedDays": 0
+  },
+  "plannedMarket": "Kumbakonam (Uzhavar Sandhai)",
+  "alternateMarket": "Krishnagiri (Uzhavar Sandhai)",
+  "variety": "Deshi",
+  "quantityKg": 1000,
+  "totals": {
+    "engineValueInr": 20779596.61,
+    "baselineValueInr": 20753866.48,
+    "deltaInr": 25730.13,
+    "deltaPct": 0.124
+  },
+  "actionMix": {
+    "SELL": 776,
+    "REROUTE": 9
+  },
+  "actionMixPct": {
+    "SELL": 98.9,
+    "REROUTE": 1.1
+  },
+  "priceStaleness": {
+    "sameDayPriceUsedDays": 766,
+    "staleDaysUsed": 19,
+    "maxStalenessDays": 2,
+    "alternateMarketAvailableDays": 785,
+    "alternateMarketAvailablePct": 100
+  },
+  "daysWithPositiveUplift": 9,
+  "daysWithoutUplift": 776
+}

@@ -1,0 +1,1 @@
+ALTER TABLE "recommendation" ALTER COLUMN "chosen_action_code" DROP NOT NULL;

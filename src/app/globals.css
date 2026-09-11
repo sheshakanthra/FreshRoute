@@ -110,3 +110,20 @@
     @apply font-sans;
   }
 }
+
+/*
+ * Section 8 — motion is only ever a response to a real state change. Anyone
+ * who has asked their OS for reduced motion gets none of it: this kills the
+ * CSS transitions that carry urgency-styling changes, and framer-motion is
+ * covered by the <MotionConfig reducedMotion="user"> in BatchWorkspace.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

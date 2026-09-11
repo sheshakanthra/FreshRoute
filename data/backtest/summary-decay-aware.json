@@ -1,0 +1,293 @@
+{
+  "generatedAt": "2026-09-10T14:09:16.196Z",
+  "window": {
+    "start": "2024-07-16",
+    "end": "2026-09-08",
+    "evaluatedDays": 785,
+    "skippedDays": 0
+  },
+  "plannedMarket": "Kumbakonam (Uzhavar Sandhai)",
+  "alternateMarket": "Krishnagiri (Uzhavar Sandhai)",
+  "variety": "Deshi",
+  "quantityKg": 1000,
+  "ambientTempCAssumption": 28,
+  "commodityDecayParamsSourced": {
+    "optimalTempC": "13.00",
+    "chillingThresholdC": "10.00",
+    "baseDecayPointsPerHour": "0.500",
+    "q10": "2.50",
+    "q10ConsumedByAnyComputation": true,
+    "q10AppliedWarmSideOnly": "see src/domain/engine/rul.ts computeQ10RateMultiplier and computeConditionAssessment.ts computeQ10Weight"
+  },
+  "primaryScenarioId": "h24",
+  "scenarios": {
+    "h06": {
+      "label": "6h since harvest — pre-Q10 label: same-day, well inside the feasibility margin",
+      "harvestAgeHours": 6,
+      "primary": false,
+      "decayState": {
+        "thermalExposureHours": 23.72,
+        "qualityScore": 88.14,
+        "batchCondition": "HEALTHY"
+      },
+      "evaluatedDays": 785,
+      "totals": {
+        "engineValueInr": -1059750,
+        "baselineValueInr": -1059750,
+        "deltaInr": 0,
+        "deltaPct": 0
+      },
+      "actionMix": {
+        "NO_FEASIBLE_PATHWAY": 785
+      },
+      "actionMixPct": {
+        "NO_FEASIBLE_PATHWAY": 100
+      },
+      "daysWithPositiveUplift": 0,
+      "daysWithoutUplift": 785
+    },
+    "h10": {
+      "label": "10h since harvest — pre-Q10 label: just below the SELL/REROUTE infeasibility cliff",
+      "harvestAgeHours": 10,
+      "primary": false,
+      "decayState": {
+        "thermalExposureHours": 39.53,
+        "qualityScore": 80.24,
+        "batchCondition": "HEALTHY"
+      },
+      "evaluatedDays": 785,
+      "totals": {
+        "engineValueInr": -1059750,
+        "baselineValueInr": -1059750,
+        "deltaInr": 0,
+        "deltaPct": 0
+      },
+      "actionMix": {
+        "NO_FEASIBLE_PATHWAY": 785
+      },
+      "actionMixPct": {
+        "NO_FEASIBLE_PATHWAY": 100
+      },
+      "daysWithPositiveUplift": 0,
+      "daysWithoutUplift": 785
+    },
+    "h10_75": {
+      "label": "10h45m since harvest — pre-Q10 label: the narrow band where only DISCOUNT survives",
+      "harvestAgeHours": 10.75,
+      "primary": false,
+      "decayState": {
+        "thermalExposureHours": 42.49,
+        "qualityScore": 78.75,
+        "batchCondition": "HEALTHY"
+      },
+      "evaluatedDays": 785,
+      "totals": {
+        "engineValueInr": -1059750,
+        "baselineValueInr": -1059750,
+        "deltaInr": 0,
+        "deltaPct": 0
+      },
+      "actionMix": {
+        "NO_FEASIBLE_PATHWAY": 785
+      },
+      "actionMixPct": {
+        "NO_FEASIBLE_PATHWAY": 100
+      },
+      "daysWithPositiveUplift": 0,
+      "daysWithoutUplift": 785
+    },
+    "h24": {
+      "label": "24h (1 day) since harvest — PRIMARY: batch held overnight, uncooled, before today's decision",
+      "harvestAgeHours": 24,
+      "primary": true,
+      "decayState": {
+        "thermalExposureHours": 94.87,
+        "qualityScore": 52.57,
+        "batchCondition": "MODERATE"
+      },
+      "evaluatedDays": 785,
+      "totals": {
+        "engineValueInr": -1059750,
+        "baselineValueInr": -1059750,
+        "deltaInr": 0,
+        "deltaPct": 0
+      },
+      "actionMix": {
+        "NO_FEASIBLE_PATHWAY": 785
+      },
+      "actionMixPct": {
+        "NO_FEASIBLE_PATHWAY": 100
+      },
+      "daysWithPositiveUplift": 0,
+      "daysWithoutUplift": 785
+    },
+    "h1_q10": {
+      "label": "1h since harvest — RECALIBRATED: well inside the post-Q10 feasibility margin",
+      "harvestAgeHours": 1,
+      "primary": false,
+      "decayState": {
+        "thermalExposureHours": 3.95,
+        "qualityScore": 98.02,
+        "batchCondition": "HEALTHY"
+      },
+      "evaluatedDays": 785,
+      "totals": {
+        "engineValueInr": 19266390.74,
+        "baselineValueInr": 19242470.05,
+        "deltaInr": 23920.69,
+        "deltaPct": 0.124
+      },
+      "actionMix": {
+        "SELL": 776,
+        "REROUTE": 9
+      },
+      "actionMixPct": {
+        "SELL": 98.9,
+        "REROUTE": 1.1
+      },
+      "daysWithPositiveUplift": 9,
+      "daysWithoutUplift": 776
+    },
+    "h2_5_q10": {
+      "label": "2h30m since harvest — RECALIBRATED: just below the post-Q10 SELL/REROUTE cliff (~2.7h)",
+      "harvestAgeHours": 2.5,
+      "primary": false,
+      "decayState": {
+        "thermalExposureHours": 9.88,
+        "qualityScore": 95.06,
+        "batchCondition": "HEALTHY"
+      },
+      "evaluatedDays": 785,
+      "totals": {
+        "engineValueInr": 8948658.31,
+        "baselineValueInr": 8428196.61,
+        "deltaInr": 520461.7,
+        "deltaPct": 6.175
+      },
+      "actionMix": {
+        "DISCOUNT": 778,
+        "REROUTE": 7
+      },
+      "actionMixPct": {
+        "DISCOUNT": 99.1,
+        "REROUTE": 0.9
+      },
+      "daysWithPositiveUplift": 785,
+      "daysWithoutUplift": 0
+    },
+    "h2_75_q10": {
+      "label": "2h45m since harvest — RECALIBRATED: the narrow post-Q10 band where only DISCOUNT survives",
+      "harvestAgeHours": 2.75,
+      "primary": false,
+      "decayState": {
+        "thermalExposureHours": 10.87,
+        "qualityScore": 94.56,
+        "batchCondition": "HEALTHY"
+      },
+      "evaluatedDays": 785,
+      "totals": {
+        "engineValueInr": 2962292.49,
+        "baselineValueInr": 306903.92,
+        "deltaInr": 2655388.57,
+        "deltaPct": 865.218
+      },
+      "actionMix": {
+        "DISCOUNT": 785
+      },
+      "actionMixPct": {
+        "DISCOUNT": 100
+      },
+      "daysWithPositiveUplift": 785,
+      "daysWithoutUplift": 0
+    }
+  },
+  "comparisonToOriginalNoDecayBacktest": {
+    "note": "original = scripts/backtest/run.ts (fresh-every-day, HEALTHY/0h), read directly from data/backtest/summary.json, not retyped.",
+    "original": {
+      "deltaInr": 25730.13,
+      "deltaPct": 0.124,
+      "actionMixPct": {
+        "SELL": 98.9,
+        "REROUTE": 1.1
+      }
+    },
+    "decayAwarePrimary": {
+      "deltaInr": 0,
+      "deltaPct": 0,
+      "actionMixPct": {
+        "NO_FEASIBLE_PATHWAY": 100
+      }
+    }
+  },
+  "illustrativeSyntheticStoreOnly": {
+    "warning": "NOT real economics. Real facility name/location/capacity (source-cited in storage_facility), placeholder cost only. Never blended into the headline scenarios above.",
+    "facilityUsed": {
+      "name": "Cold Storage, Valappakudi (Thanjavur market committee)",
+      "district": "Thanjavur",
+      "capacityKg": "100000.00"
+    },
+    "harvestAgeScenarioUsed": "h1_q10",
+    "byTariff": {
+      "tariff_0.1": {
+        "tariffPerKgPerDay": 0.1,
+        "evaluatedDays": 785,
+        "totals": {
+          "engineValueInr": 19266390.74,
+          "baselineValueInr": 19242470.05,
+          "deltaInr": 23920.69,
+          "deltaPct": 0.124
+        },
+        "actionMix": {
+          "SELL": 776,
+          "REROUTE": 9
+        },
+        "actionMixPct": {
+          "SELL": 98.9,
+          "REROUTE": 1.1
+        },
+        "daysWithPositiveUplift": 9,
+        "daysWithoutUplift": 776
+      },
+      "tariff_0.25": {
+        "tariffPerKgPerDay": 0.25,
+        "evaluatedDays": 785,
+        "totals": {
+          "engineValueInr": 19266390.74,
+          "baselineValueInr": 19242470.05,
+          "deltaInr": 23920.69,
+          "deltaPct": 0.124
+        },
+        "actionMix": {
+          "SELL": 776,
+          "REROUTE": 9
+        },
+        "actionMixPct": {
+          "SELL": 98.9,
+          "REROUTE": 1.1
+        },
+        "daysWithPositiveUplift": 9,
+        "daysWithoutUplift": 776
+      },
+      "tariff_0.5": {
+        "tariffPerKgPerDay": 0.5,
+        "evaluatedDays": 785,
+        "totals": {
+          "engineValueInr": 19266390.74,
+          "baselineValueInr": 19242470.05,
+          "deltaInr": 23920.69,
+          "deltaPct": 0.124
+        },
+        "actionMix": {
+          "SELL": 776,
+          "REROUTE": 9
+        },
+        "actionMixPct": {
+          "SELL": 98.9,
+          "REROUTE": 1.1
+        },
+        "daysWithPositiveUplift": 9,
+        "daysWithoutUplift": 776
+      }
+    }
+  }
+}

@@ -15,9 +15,8 @@ const DECISION_INPUTS = ["Condition", "Market", "Logistics", "Economics"];
 export default function Home() {
   return (
     <div className="flex min-h-dvh flex-col bg-background text-foreground">
-      <header className="flex items-center justify-between border-b border-border px-6 py-5">
+      <header className="flex items-center border-b border-border px-6 py-5">
         <span className="font-mono text-xs tracking-[0.2em] text-muted-foreground uppercase">FreshRoute</span>
-        <DemoBanner compact />
       </header>
 
       <main className="flex flex-1 flex-col items-center justify-center px-6 py-16">

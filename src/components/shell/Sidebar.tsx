@@ -4,12 +4,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { cn } from "@/lib/utils";
-import { DemoBanner } from "./DemoBanner";
 import { NAV_ITEMS, PRODUCT_VERSION } from "./nav-items";
 
 /**
  * Section 5 — desktop left sidebar: brand identity, P0 navigation, and the
- * bottom block (demo mode / environment indicator / product version).
+ * bottom block (product version).
  */
 export function Sidebar() {
   const pathname = usePathname();
@@ -45,7 +44,6 @@ export function Sidebar() {
       </nav>
 
       <div className="flex flex-col gap-2 border-t border-sidebar-border px-4 py-4">
-        <DemoBanner compact />
         <span className="font-mono text-[10px] text-muted-foreground">{PRODUCT_VERSION}</span>
       </div>
     </aside>

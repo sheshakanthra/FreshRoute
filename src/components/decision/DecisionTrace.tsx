@@ -5,7 +5,6 @@ import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import type { BatchViewData } from "@/demo/scenarios/batchViewData";
-import { DATA_PROVENANCE } from "@/domain/engine";
 import { formatIndicativeInr } from "@/lib/formatting/currency";
 import { formatHours } from "@/lib/formatting/number";
 
@@ -108,8 +107,8 @@ export function DecisionTrace({ data }: { data: BatchViewData }) {
           </TraceSection>
 
           <TraceSection title="Provenance">
-            <TraceRow label="Telemetry" value={DATA_PROVENANCE} mono />
-            <TraceRow label="Market values" value={DATA_PROVENANCE} mono />
+            <TraceRow label="Telemetry" value={batch.telemetry.dataProvenance} mono />
+            <TraceRow label="Market values" value={plannedSnapshot?.dataProvenance ?? "SYNTHETIC"} mono />
           </TraceSection>
 
           <TraceSection title="Engine">

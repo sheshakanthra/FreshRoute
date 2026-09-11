@@ -1,0 +1,48 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1788975768920,
+      "tag": "0000_past_sir_ram",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1788975779775,
+      "tag": "0001_telemetry_append_only_trigger",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789026838697,
+      "tag": "0002_big_zombie",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1789027195365,
+      "tag": "0003_fair_christian_walker",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1789028866819,
+      "tag": "0004_recommendation_outcomes_view",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1789028866820,
+      "tag": "0005_verified_facilities",
+      "breakpoints": true
+    }
+  ]
+}

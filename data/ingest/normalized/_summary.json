@@ -1,0 +1,9 @@
+{
+  "rawRowsRead": 126578,
+  "normalizedRowsWritten": 95644,
+  "duplicatesCollapsed": 26403,
+  "rejected": 4531,
+  "rejectedByReason": {
+    "out_of_window": 4531
+  }
+}
