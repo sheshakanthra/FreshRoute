@@ -1,22 +1,19 @@
 import { cn } from "@/lib/utils";
 
 /**
- * Section 36 / 45 — the environment/provenance indicator. Stays visible in
- * the primary decision experience. This is a status readout, not a warning
- * banner — no alarming color, no dismiss action, no apology copy.
+ * Section 36 / 45 — the provenance disclosure line. Stays visible in the
+ * primary decision experience: what backs the figures on screen is real
+ * market prices, manually entered telemetry, and indicative logistics &
+ * facilities data. This is a status readout, not a warning banner — no
+ * alarming color, no dismiss action, no apology copy. The standalone
+ * "Demo Mode" pill that used to precede this line (landing page top-right,
+ * sidebar) carried no informational content of its own and has been
+ * removed; this disclosure is the substantive part and stays.
  */
-export function DemoBanner({ compact = false, className }: { compact?: boolean; className?: string }) {
+export function DemoBanner({ className }: { className?: string }) {
   return (
-    <div className={cn("flex items-center gap-2", className)}>
-      <span className="inline-flex items-center gap-1.5 rounded-full border border-warning/30 bg-warning/10 px-2 py-0.5 text-xs font-medium text-warning">
-        <span className="size-1.5 rounded-full bg-current" aria-hidden="true" />
-        Demo Mode
-      </span>
-      {!compact && (
-        <span className="font-mono text-xs text-muted-foreground">
-          Real market prices (market_price) · manually entered telemetry · indicative logistics &amp; facilities
-        </span>
-      )}
-    </div>
+    <span className={cn("font-mono text-xs text-muted-foreground", className)}>
+      Real market prices (market_price) · manually entered telemetry · indicative logistics &amp; facilities
+    </span>
   );
 }
